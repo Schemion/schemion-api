@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 @dataclass
@@ -9,4 +9,4 @@ class User:
     email: str
     hashed_password: str
     role: str
-    created_at: datetime
+    created_at: datetime = datetime.now(timezone.utc)

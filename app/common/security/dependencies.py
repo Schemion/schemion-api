@@ -1,4 +1,6 @@
 from typing import Optional, List
+from uuid import UUID
+
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -21,7 +23,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
     try:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-        user_id: Optional[int] = payload.get("sub")
+        user_id: Optional[UUID] = payload.get("sub")
         if user_id is None:
             raise credentials_exception
     except JWTError:
