@@ -13,6 +13,8 @@ class Settings:
     MINIO_PUBLIC_ENDPOINT: str = os.getenv("MINIO_PUBLIC_ENDPOINT", "files.localhost")
     MINIO_ACCESS_KEY: str = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
     MINIO_SECRET_KEY: str = os.getenv("MINIO_SECRET_KEY", "minioadmin")
-    MINIO_BUCKET: str = os.getenv("MINIO_BUCKET", "books-images")
+    MINIO_SCHEMAS_BUCKET: str = os.getenv("MINIO_BUCKET", "schemas-images")
+    MINIO_MODELS_BUCKET: str = os.getenv("MINIO_BUCKET", "models")
+    MINIO_DATASET_BUCKET: str = os.getenv("MINIO_BUCKET", "datasets")
 
 settings = Settings()
