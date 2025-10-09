@@ -16,7 +16,7 @@ class ModelService:
     def create_model(self,  model: ModelCreate, file_data: bytes, filename: str, content_type: str) -> entities.Model:
         model_object = self.storage.upload_file(file_data, filename, content_type,
                                                 settings.MINIO_MODELS_BUCKET)
-        model.input_path = model_object
+        model.minio_model_path = model_object
         return self.model_repo.create_model(model)
 
     def get_model_by_id(self, model_id: UUID) -> Optional[entities.Model]:

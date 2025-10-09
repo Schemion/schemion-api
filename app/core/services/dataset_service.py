@@ -12,10 +12,10 @@ class DatasetService:
         self.dataset_repo = dataset_repo
         self.storage = storage
 
-    def create_model(self, dataset: DatasetCreate, file_data: bytes, filename: str, content_type: str) -> entities.Dataset:
+    def create_dataset(self, dataset: DatasetCreate, file_data: bytes, filename: str, content_type: str) -> entities.Dataset:
         dataset_object = self.storage.upload_file(file_data, filename, content_type,
                                                 settings.MINIO_DATASET_BUCKET)
-        dataset.input_path = dataset_object
+        dataset.minio_path = dataset_object
         return self.dataset_repo.create_dataset(dataset)
 
     def get_dataset_by_id(self, dataset_id: UUID) -> Optional[entities.Dataset]:
