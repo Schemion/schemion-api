@@ -1,9 +1,7 @@
 from uuid import UUID
 
-from fastapi import Depends
 from jose import jwt, JWTError
 from sqladmin.authentication import AuthenticationBackend
-from sqlalchemy.orm import Session
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -20,7 +18,8 @@ class AdminAuth(AuthenticationBackend):
 
     async def login(self, request: Request) -> bool:
         form = await request.form()
-        email, password = form["email"], form["password"]
+        # В sqladmin ожидается username, но так как у нас его нет, то будет email но подпись останется username
+        email, password = form["username"], form["password"]
 
         db = next(get_db())
 

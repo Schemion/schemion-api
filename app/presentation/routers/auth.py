@@ -21,6 +21,7 @@ def login_for_access_token(
     user_service = UserService(user_repo)
 
     user = user_service.get_user_by_email(form_data.username)
+    # O2Auth тоже ждет username но ему особо пофиг, поэтому в форме у нас username а по факту email
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

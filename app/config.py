@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings:
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://admin:admin@localhost:5432/schemion")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://admin:admin@database:5432/schemion")
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     JWT_SECRET: str = os.getenv("JWT_SECRET", "supersecret")
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
