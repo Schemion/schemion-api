@@ -32,20 +32,21 @@ def create_dataset(name: str = Form(...), description: Optional[str] = Form(None
             filename=file.filename,
             content_type=file.content_type or "application/octet-stream"
         )
+        file.file.close()
         return created
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to upload dataset")
+        raise HTTPException(status_code=500, detail=f"Failed to upload dataset: {e}")
 
 
 @router.get("/", response_model=list[DatasetRead])
-def get_datasets(skip: int = 0,limit: int = 100,name_contains: Optional[str] = None,db: Session = Depends(get_db)):
-    service = DatasetService(DatasetRepository(db), Depends(get_storage))
+def get_datasets(skip: int = 0,limit: int = 100,name_contains: Optional[str] = None,db: Session = Depends(get_db), storage = Depends(get_storage)):
+    service = DatasetService(DatasetRepository(db), storage)
     return service.get_datasets(skip, limit, name_contains)
 
 
 @router.get("/{dataset_id}", response_model=DatasetRead)
-def get_dataset(dataset_id: UUID, db: Session = Depends(get_db)):
-    service = DatasetService(DatasetRepository(db), Depends(get_storage))
+def get_dataset(dataset_id: UUID, db: Session = Depends(get_db), storage = Depends(get_storage)):
+    service = DatasetService(DatasetRepository(db), storage)
     dataset = service.get_dataset_by_id(dataset_id)
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")

@@ -14,7 +14,7 @@ class DatasetService:
 
     def create_dataset(self, dataset: DatasetCreate, file_data: bytes, filename: str, content_type: str) -> entities.Dataset:
         dataset_object = self.storage.upload_file(file_data, filename, content_type,
-                                                settings.MINIO_DATASET_BUCKET)
+                                                settings.MINIO_DATASETS_BUCKET)
         dataset.minio_path = dataset_object
         return self.dataset_repo.create_dataset(dataset)
 
