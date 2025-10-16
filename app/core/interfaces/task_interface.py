@@ -6,7 +6,10 @@ from app.presentation import schemas
 
 
 class TaskInterface(Protocol):
-    def create_task(self, task: schemas.TaskCreate) -> entities.Task:
+    def create_inference_task(self, task: schemas.TaskCreate) -> entities.Task:
+        ...
+
+    def create_training_task(self, task: schemas.TaskCreate) -> entities.Task:
         ...
 
     def get_task_by_id(self, task_id: UUID) -> Optional[entities.Task]:

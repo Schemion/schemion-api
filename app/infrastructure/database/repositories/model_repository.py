@@ -28,7 +28,7 @@ class ModelRepository(ModelInterface):
         return self._to_entity(db_model)
 
     def get_model_by_id(self, model_id: UUID) -> Optional[EntityModel]:
-        db_model = self.db.query(models.Model).filter(models.Model.id == model_id).first()
+        db_model = self.db.query(models.Model).filter(model_id == models.Model.id).first()
         return self._to_entity(db_model) if db_model else None
 
     def get_models(
@@ -41,9 +41,9 @@ class ModelRepository(ModelInterface):
         query = self.db.query(models.Model)
 
         if status is not None:
-            query = query.filter(models.Model.status == status)
+            query = query.filter(status == models.Model.status)
         if dataset_id is not None:
-            query = query.filter(models.Model.dataset_id == dataset_id)
+            query = query.filter(dataset_id == models.Model.dataset_id)
 
         db_models = query.offset(skip).limit(limit).all()
         return [self._to_entity(model) for model in db_models]
@@ -51,13 +51,13 @@ class ModelRepository(ModelInterface):
     def get_models_by_dataset_id(self, dataset_id: UUID) -> list[EntityModel]:
         db_models = (
             self.db.query(models.Model)
-            .filter(models.Model.dataset_id == dataset_id)
+            .filter(dataset_id == models.Model.dataset_id)
             .all()
         )
         return [self._to_entity(model) for model in db_models]
 
     def delete_model_by_id(self, model_id: UUID) -> None:
-        db_model = self.db.query(models.Model).filter(models.Model.id == model_id).first()
+        db_model = self.db.query(models.Model).filter(model_id == models.Model.id).first()
         if db_model:
             self.db.delete(db_model)
             self.db.commit()

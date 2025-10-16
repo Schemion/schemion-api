@@ -11,3 +11,7 @@ class ModelStatus(str, Enum):
     training = "training"
     completed = "completed"
     failed = "failed"
+
+class TaskStatus(str, Enum):
+    inference = "inference"
+    training = "training"

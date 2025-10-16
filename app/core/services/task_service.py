@@ -12,10 +12,13 @@ class TaskService:
         self.task_repo = task_repo
         self.storage = storage
 
-    def create_task(self, task: TaskCreate, file_data: bytes, filename: str, content_type: str) -> entities.Task:
+    def create_inference_task(self, task: TaskCreate, file_data: bytes, filename: str, content_type: str) -> entities.Task:
         input_object = self.storage.upload_file(file_data, filename, content_type, settings.MINIO_SCHEMAS_BUCKET) # Схемы потому что загружают схемы
         task.input_path = input_object
-        return self.task_repo.create_task(task)
+        return self.task_repo.create_inference_task(task)
+
+    def create_training_task(self, task: TaskCreate) -> entities.Task:
+        return self.task_repo.create_training_task(task)
 
     def get_task_by_id(self, task_id: UUID) -> Optional[entities.Task]:
         return self.task_repo.get_task_by_id(task_id)
