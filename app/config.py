@@ -5,7 +5,7 @@ load_dotenv()
 
 class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://admin:admin@database:5432/schemion")
-    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    RABBITMQ_URL: str = os.getenv("RABBITMQ_URL", "amqp://admin:admin@rabbitmq:5672/")
     JWT_SECRET: str = os.getenv("JWT_SECRET", "supersecret")
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))

@@ -15,3 +15,7 @@ class ModelStatus(str, Enum):
 class TaskStatus(str, Enum):
     inference = "inference"
     training = "training"
+
+class QueueTypes(str, Enum):
+    inference_queue = "inference_queue"
+    training_queue = "training_queue"
