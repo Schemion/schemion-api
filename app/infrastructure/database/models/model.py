@@ -13,6 +13,7 @@ class Model(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
     version = Column(String(50), nullable=False)
+    architecture = Column(String(50), nullable=False)
     dataset_id = Column(UUID(as_uuid=True), ForeignKey("datasets.id"), nullable=True)
     minio_model_path = Column(String(512), nullable=False)
     status = Column(Enum(ModelStatus, name="model_status"), nullable=False, default=ModelStatus.pending)

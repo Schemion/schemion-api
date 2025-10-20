@@ -18,6 +18,7 @@ class ModelRepository(ModelInterface):
         db_model = models.Model(
             name=model.name,
             version=model.version,
+            architecture=model.architecture,
             dataset_id=model.dataset_id,
             minio_model_path=model.minio_model_path,
             status=model.status or ModelStatus.pending,
@@ -68,6 +69,7 @@ class ModelRepository(ModelInterface):
             id=db_model.id,
             name=db_model.name,
             version=db_model.version,
+            architecture = db_model.architecture,
             dataset_id=db_model.dataset_id,
             minio_model_path=db_model.minio_model_path,
             status=db_model.status,
@@ -80,6 +82,7 @@ class ModelRepository(ModelInterface):
             id=entity.id,
             name=entity.name,
             version=entity.version,
+            architecture=entity.architecture,
             dataset_id=entity.dataset_id,
             minio_model_path=entity.minio_model_path,
             status=entity.status,

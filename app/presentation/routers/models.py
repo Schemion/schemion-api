@@ -9,13 +9,13 @@ from app.core.services import ModelService
 from app.dependencies import get_storage, get_db
 from app.infrastructure.database.repositories import ModelRepository
 from app.presentation.schemas import ModelCreate, ModelRead
-from app.core.enums import ModelStatus
+from app.core.enums import ModelStatus, ModelArchitectures
 
 router = APIRouter(prefix="/models", tags=["models"])
 
 
 @router.post("/create", response_model=ModelRead, status_code=201)
-def create_model(name: str = Form(...),version: str = Form(...), dataset_id: Optional[UUID] = Form(None),status: ModelStatus = Form(ModelStatus.pending),
+def create_model(name: str = Form(...),version: str = Form(...), architecture: ModelArchitectures = Form(...),dataset_id: Optional[UUID] = Form(None),status: ModelStatus = Form(ModelStatus.pending),
         file: UploadFile = File(...),
         db: Session = Depends(get_db),
         storage=Depends(get_storage),
@@ -24,6 +24,7 @@ def create_model(name: str = Form(...),version: str = Form(...), dataset_id: Opt
     model_create = ModelCreate(
         name=name,
         version=version,
+        architecture = architecture.value,
         dataset_id=dataset_id,
         status=status
     )

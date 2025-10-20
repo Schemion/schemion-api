@@ -22,6 +22,7 @@ class TaskService:
         task.input_path = input_object
         created_task = self.task_repo.create_inference_task(task)
 
+        #TODO: добавить сюда не айди модели а подписанную ссылку из minio, а также архитектуру модели
         message = {
             "task_id": str(created_task.id),
             "task_type": TaskStatus.inference,
@@ -36,6 +37,7 @@ class TaskService:
     def create_training_task(self, task: TaskCreate) -> entities.Task:
         created_task = self.task_repo.create_training_task(task)
 
+        #TODO: добавить сюда архитектуру модели
         message = {
             "task_id": str(created_task.id),
             "task_type": TaskStatus.training,

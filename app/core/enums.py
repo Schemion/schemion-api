@@ -19,3 +19,7 @@ class TaskStatus(str, Enum):
 class QueueTypes(str, Enum):
     inference_queue = "inference_queue"
     training_queue = "training_queue"
+
+class ModelArchitectures(str, Enum):
+    faster_rcnn = "faster_rcnn"
+    yolo = "yolo"
