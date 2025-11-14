@@ -6,6 +6,7 @@ from typing import Optional
 from app.core.enums import ModelStatus
 from app.core.interfaces import ModelInterface
 from app.infrastructure.database import models
+from app.infrastructure.mappers import OrmEntityMapper
 from app.presentation import schemas
 from app.core.entities.model import Model as EntityModel
 
@@ -26,11 +27,11 @@ class ModelRepository(ModelInterface):
         self.db.add(db_model)
         self.db.commit()
         self.db.refresh(db_model)
-        return self._to_entity(db_model)
+        return OrmEntityMapper.to_entity(db_model, EntityModel)
 
     def get_model_by_id(self, model_id: UUID) -> Optional[EntityModel]:
         db_model = self.db.query(models.Model).filter(model_id == models.Model.id).first()
-        return self._to_entity(db_model) if db_model else None
+        return OrmEntityMapper.to_entity(db_model, EntityModel) if db_model else None
 
     def get_models(
             self,
@@ -47,7 +48,7 @@ class ModelRepository(ModelInterface):
             query = query.filter(dataset_id == models.Model.dataset_id)
 
         db_models = query.offset(skip).limit(limit).all()
-        return [self._to_entity(model) for model in db_models]
+        return [OrmEntityMapper.to_entity(model, EntityModel) for model in db_models]
 
     def get_models_by_dataset_id(self, dataset_id: UUID) -> list[EntityModel]:
         db_models = (
@@ -55,7 +56,7 @@ class ModelRepository(ModelInterface):
             .filter(dataset_id == models.Model.dataset_id)
             .all()
         )
-        return [self._to_entity(model) for model in db_models]
+        return [OrmEntityMapper.to_entity(model, EntityModel) for model in db_models]
 
     def delete_model_by_id(self, model_id: UUID) -> None:
         db_model = self.db.query(models.Model).filter(model_id == models.Model.id).first()
@@ -63,28 +64,3 @@ class ModelRepository(ModelInterface):
             self.db.delete(db_model)
             self.db.commit()
 
-    @staticmethod
-    def _to_entity(db_model: models.Model) -> EntityModel:
-        return EntityModel(
-            id=db_model.id,
-            name=db_model.name,
-            version=db_model.version,
-            architecture = db_model.architecture,
-            dataset_id=db_model.dataset_id,
-            minio_model_path=db_model.minio_model_path,
-            status=db_model.status,
-            created_at=db_model.created_at,
-        )
-
-    @staticmethod
-    def _to_orm(entity: EntityModel) -> models.Model:
-        return EntityModel(
-            id=entity.id,
-            name=entity.name,
-            version=entity.version,
-            architecture=entity.architecture,
-            dataset_id=entity.dataset_id,
-            minio_model_path=entity.minio_model_path,
-            status=entity.status,
-            created_at=entity.created_at,
-        )

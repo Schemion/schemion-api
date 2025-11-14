@@ -1,4 +1,3 @@
-import asyncio
 from datetime import timezone, datetime
 from typing import Optional
 from uuid import UUID
@@ -7,7 +6,7 @@ from app.core import entities
 from app.core.enums import QueueTypes, TaskStatus
 from app.core.interfaces import TaskInterface, StorageInterface
 from app.config import settings
-from app.core.messaging.rabbitmq_publisher import RabbitMQPublisher
+from app.infrastructure.messaging import RabbitMQPublisher
 from app.presentation.schemas import TaskCreate
 
 

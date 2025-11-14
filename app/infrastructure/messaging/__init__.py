@@ -1,0 +1,1 @@
+from .rabbitmq_publisher import RabbitMQPublisher

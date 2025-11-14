@@ -7,6 +7,7 @@ from typing import Optional
 
 from app.core.interfaces import AuditLogInterface
 from app.infrastructure.database import models
+from app.infrastructure.mappers import OrmEntityMapper
 from app.presentation import schemas
 from app.core.entities.audit_log import AuditLog as EntityAuditLog
 
@@ -24,11 +25,11 @@ class AuditLogRepository(AuditLogInterface):
         self.db.add(db_log)
         self.db.commit()
         self.db.refresh(db_log)
-        return self._to_entity(db_log)
+        return OrmEntityMapper.to_entity(db_log, EntityAuditLog)
 
     def get_audit_log_by_id(self, audit_log_id: int) -> Optional[EntityAuditLog]:
         db_log = self.db.query(models.AuditLog).filter(audit_log_id == models.AuditLog.id).first()
-        return self._to_entity(db_log) if db_log else None
+        return OrmEntityMapper.to_entity(db_log, EntityAuditLog) if db_log else None
 
     def get_audit_logs(self, skip: int = 0, limit: int = 100, user_id: Optional[UUID] = None, action: Optional[str] = None, since: Optional[datetime] = None) -> list[EntityAuditLog]:
         query = self.db.query(models.AuditLog)
@@ -45,30 +46,10 @@ class AuditLogRepository(AuditLogInterface):
             query = query.filter(and_(*filters))
 
         db_logs = query.order_by(models.AuditLog.created_at.desc()).offset(skip).limit(limit).all()
-        return [self._to_entity(log) for log in db_logs]
+        return [OrmEntityMapper.to_entity(log, EntityAuditLog) for log in db_logs]
 
     def delete_audit_log_by_id(self, audit_log_id: int) -> None:
         db_log = self.db.query(models.AuditLog).filter(audit_log_id == models.AuditLog.id).first()
         if db_log:
             self.db.delete(db_log)
             self.db.commit()
-
-    @staticmethod
-    def _to_entity(db_log: models.AuditLog) -> EntityAuditLog:
-        return EntityAuditLog(
-            id=db_log.id,
-            user_id=db_log.user_id,
-            action=db_log.action,
-            details=db_log.details,
-            created_at=db_log.created_at,
-        )
-
-    @staticmethod
-    def _to_orm(entity: EntityAuditLog) -> models.AuditLog:
-        return EntityAuditLog(
-            id=entity.id,
-            user_id=entity.user_id,
-            action=entity.action,
-            details=entity.details,
-            created_at=entity.created_at,
-        )
