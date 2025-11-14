@@ -1,11 +1,15 @@
-from typing import Protocol
+from abc import ABC, abstractmethod
 
-class StorageInterface(Protocol):
+
+class StorageInterface(ABC):
+    @abstractmethod
     def upload_file(self, file_data: bytes, filename: str, content_type: str, bucket: str) -> str:
         ...
 
+    @abstractmethod
     def delete_file(self, object_name: str, bucket: str) -> None:
         ...
 
+    @abstractmethod
     def get_file_url(self, object_name: str, bucket: str) -> str:
         ...

@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from app.core import entities
-from app.core.interfaces import AuditLogInterface, StorageInterface
+from app.core.interfaces import AuditLogInterface
 from app.presentation.schemas import AuditLogCreate
 
 
