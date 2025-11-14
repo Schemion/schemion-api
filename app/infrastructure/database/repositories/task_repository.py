@@ -12,7 +12,7 @@ class TaskRepository(TaskInterface):
     def __init__(self, db: Session):
         self.db = db
 
-    def create_task(self, task: schemas.TaskCreate) -> EntityTask:
+    def create_inference_task(self, task: schemas.TaskCreate) -> EntityTask:
         db_task = models.Task(
             user_id=task.user_id,
             task_type=task.task_type,
@@ -27,8 +27,23 @@ class TaskRepository(TaskInterface):
         self.db.refresh(db_task)
         return self._to_entity(db_task)
 
+    def create_training_task(self, task: schemas.TaskCreate) -> EntityTask:
+        db_task = models.Task(
+            user_id=task.user_id,
+            task_type=task.task_type,
+            model_id=task.model_id,
+            dataset_id=task.dataset_id,
+            input_path=None,
+            output_path=None,
+            error_msg=None,
+        )
+        self.db.add(db_task)
+        self.db.commit()
+        self.db.refresh(db_task)
+        return self._to_entity(db_task)
+
     def get_task_by_id(self, task_id: UUID) -> Optional[EntityTask]:
-        db_task = self.db.query(models.Task).filter(models.Task.id == task_id).first()
+        db_task = self.db.query(models.Task).filter(task_id == models.Task.id).first()
         return self._to_entity(db_task) if db_task else None
 
     def get_tasks(self, skip: int = 0, limit: int = 100, user_id: Optional[UUID] = None, model_id: Optional[UUID] = None) -> list[EntityTask]:
@@ -47,11 +62,11 @@ class TaskRepository(TaskInterface):
         return [self._to_entity(task) for task in db_tasks]
 
     def get_tasks_by_user_id(self, user_id: UUID) -> Optional[list[EntityTask]]:
-        db_tasks = self.db.query(models.Task).filter(models.Task.user_id == user_id).all()
+        db_tasks = self.db.query(models.Task).filter(user_id == models.Task.user_id).all()
         return [self._to_entity(task) for task in db_tasks] if db_tasks else None
 
     def delete_task_by_id(self, task_id: UUID) -> None:
-        db_task = self.db.query(models.Task).filter(models.Task.id == task_id).first()
+        db_task = self.db.query(models.Task).filter(task_id == models.Task.id).first()
         if db_task:
             self.db.delete(db_task)
             self.db.commit()

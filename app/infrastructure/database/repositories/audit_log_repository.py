@@ -27,7 +27,7 @@ class AuditLogRepository(AuditLogInterface):
         return self._to_entity(db_log)
 
     def get_audit_log_by_id(self, audit_log_id: int) -> Optional[EntityAuditLog]:
-        db_log = self.db.query(models.AuditLog).filter(models.AuditLog.id == audit_log_id).first()
+        db_log = self.db.query(models.AuditLog).filter(audit_log_id == models.AuditLog.id).first()
         return self._to_entity(db_log) if db_log else None
 
     def get_audit_logs(self, skip: int = 0, limit: int = 100, user_id: Optional[UUID] = None, action: Optional[str] = None, since: Optional[datetime] = None) -> list[EntityAuditLog]:
@@ -48,7 +48,7 @@ class AuditLogRepository(AuditLogInterface):
         return [self._to_entity(log) for log in db_logs]
 
     def delete_audit_log_by_id(self, audit_log_id: int) -> None:
-        db_log = self.db.query(models.AuditLog).filter(models.AuditLog.id == audit_log_id).first()
+        db_log = self.db.query(models.AuditLog).filter(audit_log_id == models.AuditLog.id).first()
         if db_log:
             self.db.delete(db_log)
             self.db.commit()

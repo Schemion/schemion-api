@@ -8,7 +8,11 @@ from app.presentation import schemas
 
 class TaskInterface(ABC):
     @abstractmethod
-    def create_task(self, task: schemas.TaskCreate) -> entities.Task:
+    def create_inference_task(self, task: schemas.TaskCreate) -> entities.Task:
+        ...
+
+    @abstractmethod
+    def create_training_task(self, task: schemas.TaskCreate) -> entities.Task:
         ...
 
     @abstractmethod

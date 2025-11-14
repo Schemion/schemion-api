@@ -25,7 +25,7 @@ class DatasetRepository(DatasetInterface):
         return self._to_entity(db_dataset)
 
     def get_dataset_by_id(self, dataset_id: UUID) -> Optional[EntityDataset]:
-        db_dataset = self.db.query(models.Dataset).filter(models.Dataset.id == dataset_id).first()
+        db_dataset = self.db.query(models.Dataset).filter(dataset_id == models.Dataset.id).first()
         return self._to_entity(db_dataset) if db_dataset else None
 
     def get_datasets(self, skip: int = 0, limit: int = 100, name_contains: Optional[str] = None) -> list[EntityDataset]:
@@ -38,7 +38,7 @@ class DatasetRepository(DatasetInterface):
         return [self._to_entity(dataset) for dataset in db_datasets]
 
     def delete_dataset_by_id(self, dataset_id: UUID) -> None:
-        db_dataset = self.db.query(models.Dataset).filter(models.Dataset.id == dataset_id).first()
+        db_dataset = self.db.query(models.Dataset).filter(dataset_id == models.Dataset.id).first()
         if db_dataset:
             self.db.delete(db_dataset)
             self.db.commit()

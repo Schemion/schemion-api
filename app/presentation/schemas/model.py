@@ -8,7 +8,8 @@ from app.core.enums import ModelStatus
 class ModelBase(BaseModel):
     name: str
     version: str
-    minio_model_path: str
+    architecture: str
+    minio_model_path: Optional[str] = None
     status: ModelStatus = ModelStatus.pending
 
 

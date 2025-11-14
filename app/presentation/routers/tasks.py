@@ -5,6 +5,7 @@ from typing import Optional
 
 from app.common.security.dependencies import require_roles
 from app.core.entities import User
+from app.core.enums import TaskStatus
 from app.core.services import TaskService
 from app.dependencies import get_storage, get_db
 from app.infrastructure.database.repositories import TaskRepository
@@ -13,31 +14,60 @@ from app.presentation.schemas import TaskCreate, TaskRead
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
-@router.post("/create", response_model=TaskRead, status_code=201)
-def create_task(user_id: UUID = Form(...),task_type: str = Form(...),model_id: UUID = Form(...), dataset_id: Optional[UUID] = Form(None), file: UploadFile = File(...),
-        db: Session = Depends(get_db),
-        storage=Depends(get_storage)
+@router.post("/create/inference", response_model=TaskRead, status_code=201)
+def create_inference_task(
+    user_id: UUID = Form(...),
+    model_id: UUID = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    storage=Depends(get_storage),
 ):
+    allowed_types = ["image/jpeg", "image/png", "application/pdf"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {file.content_type}."
+        )
+
     task_create = TaskCreate(
         user_id=user_id,
-        task_type=task_type,
+        task_type=TaskStatus.inference,
         model_id=model_id,
-        dataset_id=dataset_id
     )
 
     service = TaskService(TaskRepository(db), storage)
+
     try:
         file_data = file.file.read()
-        created = service.create_task(
+        created = service.create_inference_task(
             task=task_create,
             file_data=file_data,
             filename=file.filename,
-            content_type=file.content_type or "application/json"
+            content_type=file.content_type,
         )
         return created
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to create task")
+        raise HTTPException(status_code=500, detail=f"Failed to create inference task: {e}")
 
+
+@router.post("/create/training", response_model=TaskRead, status_code=201)
+def create_training_task(
+    user_id: UUID = Form(...),
+    dataset_id: UUID = Form(...),
+    db: Session = Depends(get_db),
+    storage=Depends(get_storage),
+):
+    task_create = TaskCreate(
+        user_id=user_id,
+        task_type=TaskStatus.training,
+        dataset_id=dataset_id,
+    )
+    service = TaskService(TaskRepository(db), storage)
+    try:
+        created = service.create_training_task(task_create)
+        return created
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create training task: {e}")
 
 @router.get("/", response_model=list[TaskRead])
 def get_tasks(skip: int = 0,limit: int = 100,user_id: Optional[UUID] = None,model_id: Optional[UUID] = None, db: Session = Depends(get_db)):

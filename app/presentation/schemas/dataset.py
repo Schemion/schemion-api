@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict
 
 class DatasetBase(BaseModel):
     name: str
-    minio_path: str
+    minio_path: Optional[str] = None
     description: Optional[str] = None
     num_samples: int = 0
 

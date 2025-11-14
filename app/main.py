@@ -1,8 +1,12 @@
 from fastapi import FastAPI
+
+from app.middleware.admin_guard import AdminGuardMiddleware
 from app.presentation.routers import tasks, datasets, users, models, auth, admin, audit_logs
 
 
 app = FastAPI()
+
+app.add_middleware(AdminGuardMiddleware)
 
 app.include_router(auth.router)
 app.include_router(users.router)

@@ -9,13 +9,13 @@ from app.core.services import ModelService
 from app.dependencies import get_storage, get_db
 from app.infrastructure.database.repositories import ModelRepository
 from app.presentation.schemas import ModelCreate, ModelRead
-from app.core.enums import ModelStatus
+from app.core.enums import ModelStatus, ModelArchitectures
 
 router = APIRouter(prefix="/models", tags=["models"])
 
 
 @router.post("/create", response_model=ModelRead, status_code=201)
-def create_model(name: str = Form(...),version: str = Form(...), dataset_id: Optional[UUID] = Form(None),status: ModelStatus = Form(ModelStatus.pending),
+def create_model(name: str = Form(...),version: str = Form(...), architecture: ModelArchitectures = Form(...),dataset_id: Optional[UUID] = Form(None),status: ModelStatus = Form(ModelStatus.pending),
         file: UploadFile = File(...),
         db: Session = Depends(get_db),
         storage=Depends(get_storage),
@@ -24,6 +24,7 @@ def create_model(name: str = Form(...),version: str = Form(...), dataset_id: Opt
     model_create = ModelCreate(
         name=name,
         version=version,
+        architecture = architecture.value,
         dataset_id=dataset_id,
         status=status
     )
@@ -37,20 +38,21 @@ def create_model(name: str = Form(...),version: str = Form(...), dataset_id: Opt
             filename=file.filename,
             content_type=file.content_type or "application/octet-stream"
         )
+        file.file.close()
         return created
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to upload model")
+        raise HTTPException(status_code=500, detail=f"Failed to upload model: {e}")
 
 
 @router.get("/", response_model=list[ModelRead])
-def get_models(skip: int = 0,limit: int = 100,status: Optional[ModelStatus] = None,dataset_id: Optional[UUID] = None,db: Session = Depends(get_db)):
-    service = ModelService(ModelRepository(db), Depends(get_storage))
+def get_models(skip: int = 0,limit: int = 100,status: Optional[ModelStatus] = None,dataset_id: Optional[UUID] = None,db: Session = Depends(get_db), storage=Depends(get_storage)):
+    service = ModelService(ModelRepository(db), storage)
     return service.get_models(skip, limit, status, dataset_id)
 
 
 @router.get("/{model_id}", response_model=ModelRead)
-def get_model(model_id: UUID, db: Session = Depends(get_db)):
-    service = ModelService(ModelRepository(db), Depends(get_storage))
+def get_model(model_id: UUID, db: Session = Depends(get_db),storage=Depends(get_storage)):
+    service = ModelService(ModelRepository(db), storage)
     model = service.get_model_by_id(model_id)
     if not model:
         raise HTTPException(status_code=404, detail="Model not found")
