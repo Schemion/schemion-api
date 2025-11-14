@@ -5,14 +5,14 @@ from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from app.core.interfaces import AuditLogInterface
+from app.core.interfaces import IAuditLogRepository
 from app.infrastructure.database import models
 from app.infrastructure.mappers import OrmEntityMapper
 from app.presentation import schemas
 from app.core.entities.audit_log import AuditLog as EntityAuditLog
 
 
-class AuditLogRepository(AuditLogInterface):
+class AuditLogRepository(IAuditLogRepository):
     def __init__(self, db: Session):
         self.db = db
 

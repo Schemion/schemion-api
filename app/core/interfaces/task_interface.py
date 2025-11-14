@@ -6,7 +6,7 @@ from app.core import entities
 from app.presentation import schemas
 
 
-class TaskInterface(ABC):
+class ITaskRepository(ABC):
     @abstractmethod
     def create_inference_task(self, task: schemas.TaskCreate) -> entities.Task:
         ...

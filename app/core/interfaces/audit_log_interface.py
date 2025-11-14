@@ -6,7 +6,7 @@ from uuid import UUID
 from app.core import entities
 from app.presentation import schemas
 
-class AuditLogInterface(ABC):
+class IAuditLogRepository(ABC):
     @abstractmethod
     def create_audit_log(self, audit_log: schemas.AuditLogCreate) -> entities.AuditLog:
         ...

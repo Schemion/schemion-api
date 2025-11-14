@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class StorageInterface(ABC):
+class IStorageRepository(ABC):
     @abstractmethod
     def upload_file(self, file_data: bytes, filename: str, content_type: str, bucket: str) -> str:
         ...

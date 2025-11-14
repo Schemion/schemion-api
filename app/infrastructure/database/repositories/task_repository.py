@@ -2,14 +2,14 @@ from uuid import UUID
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from typing import Optional
-from app.core.interfaces import TaskInterface
+from app.core.interfaces import ITaskRepository
 from app.infrastructure.database import models
 from app.infrastructure.mappers import OrmEntityMapper
 from app.presentation import schemas
 from app.core.entities.task import Task as EntityTask
 
 
-class TaskRepository(TaskInterface):
+class TaskRepository(ITaskRepository):
     def __init__(self, db: Session):
         self.db = db
 

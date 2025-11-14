@@ -3,12 +3,12 @@ from typing import Optional
 from uuid import UUID
 
 from app.core import entities
-from app.core.interfaces import AuditLogInterface
+from app.core.interfaces import IAuditLogRepository
 from app.presentation.schemas import AuditLogCreate
 
 
 class AuditLogService:
-    def __init__(self, audit_log_repo: AuditLogInterface):
+    def __init__(self, audit_log_repo: IAuditLogRepository):
         self.audit_log_repo = audit_log_repo
 
     def create_audit_log(self,  audit_log: AuditLogCreate) -> entities.AuditLog:

@@ -4,14 +4,14 @@ from uuid import UUID
 
 from app.core import entities
 from app.core.enums import QueueTypes, TaskStatus
-from app.core.interfaces import TaskInterface, StorageInterface
+from app.core.interfaces import ITaskRepository, IStorageRepository
 from app.config import settings
 from app.infrastructure.messaging import RabbitMQPublisher
 from app.presentation.schemas import TaskCreate
 
 
 class TaskService:
-    def __init__(self, task_repo: TaskInterface, storage: StorageInterface):
+    def __init__(self, task_repo: ITaskRepository, storage: IStorageRepository):
         self.task_repo = task_repo
         self.storage = storage
         self.publisher = RabbitMQPublisher()

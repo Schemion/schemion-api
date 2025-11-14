@@ -18,3 +18,5 @@ class User(Base):
 
     tasks = relationship("Task", back_populates="user")
     logs = relationship("AuditLog", back_populates="user")
+    datasets = relationship("Dataset", back_populates="user", cascade="all, delete-orphan")
+    models = relationship("Model", back_populates="user", cascade="all, delete-orphan")
