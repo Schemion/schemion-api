@@ -14,14 +14,9 @@ class ModelService:
         self.dataset_repo = dataset_repo
         self.storage = storage
 
-    def create_model(self,  model: ModelCreate, file_data: bytes, filename: str, content_type: str, current_user: entities.User, is_fine_tune: bool = False) -> entities.Model:
+    def create_model(self,  model: ModelCreate, file_data: bytes, filename: str, content_type: str, current_user: entities.User) -> entities.Model:
         model_object = self.storage.upload_file(file_data, filename, content_type,
                                                 settings.MINIO_MODELS_BUCKET)
-
-        if is_fine_tune and model.base_model_id:
-            base_model = self.get_model_by_id(model.base_model_id, current_user)
-            if not base_model:
-                raise ValueError("Base model not found or you don't have access")
 
         model.minio_model_path = model_object
         return self.model_repo.create_model(model, current_user.id, is_system=False)

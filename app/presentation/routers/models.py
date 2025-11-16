@@ -13,24 +13,19 @@ from app.core.entities import User as UserEntity
 
 router = APIRouter(prefix="/models", tags=["models"])
 
-#TODO: надо разделить создание модели и добавление модели пользователем, так как пользователь должен уметь загружать свою модель, а админ должен иметь возможность пушить модели в бд просто так
-# грубо говоря надо разделить логику создания модели от модели для тренировки
-# ручка create должна просто пушить модель в бд без обучения и всего такого, обучением или дообучением занимается другой сервис через таску
+
 @router.post("/create", response_model=ModelRead, status_code=201)
 async def create_model(
     name: str = Form(...),
     version: str = Form(...),
     architecture: ModelArchitectures = Form(...),
     dataset_id: Optional[UUID] = Form(None),
-    base_model_id: Optional[UUID] = Form(None),  # Для fine-tuning
     status: ModelStatus = Form(ModelStatus.pending),
     file: UploadFile = File(...),
     current_user: UserEntity = Depends(get_current_user),
     db: Session = Depends(get_db),
     storage = Depends(get_storage),
 ):
-    if base_model_id is None and dataset_id is None:
-        raise HTTPException(400, "Must specify either dataset_id (new training) or base_model_id (fine-tuning)")
 
 
     model_create = ModelCreate(
@@ -38,7 +33,6 @@ async def create_model(
         version=version,
         architecture=architecture.value,
         dataset_id=dataset_id,
-        base_model_id=base_model_id,
         status=status
     )
 
@@ -51,7 +45,6 @@ async def create_model(
             filename=file.filename,
             content_type=file.content_type or "application/octet-stream",
             current_user=current_user,
-            is_fine_tune=bool(base_model_id)
         )
         return created
     except ValueError as e:
