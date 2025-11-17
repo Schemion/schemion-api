@@ -1,6 +1,8 @@
 from typing import Optional
 from uuid import UUID
 
+from fastapi import HTTPException
+
 from app.config import settings
 from app.core import entities
 from app.core.interfaces import IStorageRepository, IDatasetRepository
@@ -19,7 +21,8 @@ class DatasetService:
         return self.dataset_repo.create_dataset(dataset, current_user.id)
 
     def get_dataset_by_id(self, dataset_id: UUID, current_user: entities.User) -> Optional[entities.Dataset]:
-        return self.dataset_repo.get_dataset_by_id(dataset_id, current_user.id)
+        dataset = self._ensure_dataset_exists(dataset_id, current_user.id)
+        return dataset
 
     def get_datasets(
             self,
@@ -31,10 +34,14 @@ class DatasetService:
         return self.dataset_repo.get_datasets(user_id=current_user.id, skip=skip, limit=limit, name_contains=name_contains)
 
     def delete_dataset_by_id(self, dataset_id: UUID, current_user: entities.User) -> None:
-        dataset = self.get_dataset_by_id(dataset_id, current_user)
-
-        if not dataset:
-            raise PermissionError("Dataset not found or access denied")
+        dataset = self._ensure_dataset_exists(dataset_id, current_user.id)
 
         self.storage.delete_file(dataset.minio_path, settings.MINIO_DATASETS_BUCKET)
         self.dataset_repo.delete_dataset_by_id(dataset_id)
+
+    def _ensure_dataset_exists(self, dataset_id: UUID, user_id: UUID):
+        dataset = self.dataset_repo.get_dataset_by_id(dataset_id, user_id)
+        if not dataset:
+            raise HTTPException(status_code=400, detail=f"Dataset with id={dataset_id} does not exist or access denied")
+
+        return dataset

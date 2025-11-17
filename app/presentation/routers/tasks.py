@@ -8,7 +8,7 @@ from app.core.entities import User
 from app.core.enums import TaskStatus
 from app.core.services import TaskService
 from app.dependencies import get_storage, get_db
-from app.infrastructure.database.repositories import TaskRepository
+from app.infrastructure.database.repositories import TaskRepository, DatasetRepository, ModelRepository
 from app.presentation.schemas import TaskCreate, TaskRead
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -22,12 +22,6 @@ def create_inference_task(
     db: Session = Depends(get_db),
     storage=Depends(get_storage),
 ):
-    allowed_types = ["image/jpeg", "image/png", "application/pdf"]
-    if file.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file type: {file.content_type}."
-        )
 
     task_create = TaskCreate(
         user_id=user_id,
@@ -35,7 +29,7 @@ def create_inference_task(
         model_id=model_id,
     )
 
-    service = TaskService(TaskRepository(db), storage)
+    service = TaskService(TaskRepository(db), storage, ModelRepository(db), DatasetRepository(db))
 
     try:
         file_data = file.file.read()
@@ -62,7 +56,7 @@ def create_training_task(
         task_type=TaskStatus.training,
         dataset_id=dataset_id,
     )
-    service = TaskService(TaskRepository(db), storage)
+    service = TaskService(TaskRepository(db), storage, ModelRepository(db), DatasetRepository(db))
     try:
         created = service.create_training_task(task_create)
         return created
@@ -71,13 +65,13 @@ def create_training_task(
 
 @router.get("/", response_model=list[TaskRead])
 def get_tasks(skip: int = 0,limit: int = 100,user_id: Optional[UUID] = None,model_id: Optional[UUID] = None, db: Session = Depends(get_db)):
-    service = TaskService(TaskRepository(db), Depends(get_storage))
+    service = TaskService(TaskRepository(db), Depends(get_storage), ModelRepository(db), DatasetRepository(db))
     return service.get_tasks(skip, limit, user_id, model_id)
 
 
 @router.get("/user/{user_id}", response_model=list[TaskRead])
 def get_tasks_by_user(user_id: UUID, db: Session = Depends(get_db)):
-    service = TaskService(TaskRepository(db), Depends(get_storage))
+    service = TaskService(TaskRepository(db), Depends(get_storage), ModelRepository(db), DatasetRepository(db))
     tasks = service.get_tasks_by_user_id(user_id)
     if tasks is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -86,7 +80,7 @@ def get_tasks_by_user(user_id: UUID, db: Session = Depends(get_db)):
 
 @router.get("/{task_id}", response_model=TaskRead)
 def get_task(task_id: UUID, db: Session = Depends(get_db)):
-    service = TaskService(TaskRepository(db), Depends(get_storage))
+    service = TaskService(TaskRepository(db), Depends(get_storage), ModelRepository(db), DatasetRepository(db))
     task = service.get_task_by_id(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -95,5 +89,5 @@ def get_task(task_id: UUID, db: Session = Depends(get_db)):
 
 @router.delete("/{task_id}", status_code=204)
 def delete_task(task_id: UUID, db: Session = Depends(get_db), storage=Depends(get_storage), _: User = Depends(require_roles(["admin"]))):
-    service = TaskService(TaskRepository(db), storage)
+    service = TaskService(TaskRepository(db), storage, ModelRepository(db), DatasetRepository(db))
     service.delete_task_by_id(task_id)
