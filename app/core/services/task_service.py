@@ -72,16 +72,13 @@ class TaskService:
         if not task:
             raise HTTPException(404, f"Task {task_id} does not exist")
 
-        if task.user_id != current_user.id and current_user.role != "admin":
+        if task.user_id != current_user.id:
             raise HTTPException(403, "Access denied")
 
         return task
 
     def get_tasks(self, current_user: entities.User, skip: int = 0, limit: int = 100) -> list[entities.Task]:
-        if current_user.role != "admin":
-            return self.task_repo.get_tasks(skip, limit, user_id=current_user.id)
-
-        return self.task_repo.get_tasks(skip, limit)
+        return self.task_repo.get_tasks(skip, limit, user_id=current_user.id)
 
     def get_tasks_by_user_id(self, user_id: UUID) -> list[entities.Task]:
         return self.task_repo.get_tasks_by_user_id(user_id)
@@ -91,7 +88,7 @@ class TaskService:
         if not task:
             raise HTTPException(404, f"Task {task_id} does not exist")
 
-        if task.user_id != current_user.id and current_user.role != "admin":
+        if task.user_id != current_user.id:
             raise HTTPException(403, "Access denied")
 
         self.task_repo.delete_task_by_id(task_id)
