@@ -20,14 +20,16 @@ class TaskService:
         self.dataset_repo = dataset_repo
         self.publisher = RabbitMQPublisher()
 
-    def create_inference_task(self, task: TaskCreate, file_data: bytes, filename: str, content_type: str) -> entities.Task:
+    def create_inference_task(self, task: TaskCreate, file_data: bytes, filename: str, content_type: str, current_user: entities.User) -> entities.Task:
         self._ensure_model_exists(task.model_id)
 
         allowed_types = ["image/jpeg", "image/png", "application/pdf"]
         if content_type not in allowed_types:
             raise HTTPException(status_code=400, detail=f"Unsupported file type: {content_type}.")
 
-        input_object_path = self.storage.upload_file(file_data, filename, content_type, settings.MINIO_SCHEMAS_BUCKET)
+        filepath = f"{str(current_user.id)}/{filename}"
+
+        input_object_path = self.storage.upload_file(file_data, filepath, content_type, settings.MINIO_SCHEMAS_BUCKET)
         task.input_path = input_object_path
         created = self.task_repo.create_inference_task(task)
         model = self.model_repo.get_model_by_id(task.model_id)
@@ -65,16 +67,33 @@ class TaskService:
         self._publish(QueueTypes.training_queue, message)
         return created
 
-    def get_task_by_id(self, task_id: UUID) -> Optional[entities.Task]:
-        return self.task_repo.get_task_by_id(task_id)
+    def get_task_by_id(self, task_id: UUID, current_user: entities.User) -> entities.Task:
+        task = self.task_repo.get_task_by_id(task_id)
+        if not task:
+            raise HTTPException(404, f"Task {task_id} does not exist")
 
-    def get_tasks(self, skip: int = 0, limit: int = 100, user_id: Optional[UUID] = None, model_id: Optional[UUID] = None) -> list[entities.Task]:
-        return self.task_repo.get_tasks(skip, limit, user_id, model_id)
+        if task.user_id != current_user.id and current_user.role != "admin":
+            raise HTTPException(403, "Access denied")
+
+        return task
+
+    def get_tasks(self, current_user: entities.User, skip: int = 0, limit: int = 100) -> list[entities.Task]:
+        if current_user.role != "admin":
+            return self.task_repo.get_tasks(skip, limit, user_id=current_user.id)
+
+        return self.task_repo.get_tasks(skip, limit)
 
     def get_tasks_by_user_id(self, user_id: UUID) -> list[entities.Task]:
         return self.task_repo.get_tasks_by_user_id(user_id)
 
-    def delete_task_by_id(self, task_id: UUID) -> None:
+    def delete_task_by_id(self, task_id: UUID, current_user:entities.User) -> None:
+        task = self.task_repo.get_task_by_id(task_id)
+        if not task:
+            raise HTTPException(404, f"Task {task_id} does not exist")
+
+        if task.user_id != current_user.id and current_user.role != "admin":
+            raise HTTPException(403, "Access denied")
+
         self.task_repo.delete_task_by_id(task_id)
 
     def _ensure_model_exists(self, model_id: UUID):

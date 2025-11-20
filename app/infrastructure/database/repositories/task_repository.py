@@ -1,5 +1,4 @@
 from uuid import UUID
-from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.core.interfaces import ITaskRepository
@@ -47,28 +46,28 @@ class TaskRepository(ITaskRepository):
         db_task = self.db.query(models.Task).filter(task_id == models.Task.id).first()
         return OrmEntityMapper.to_entity(db_task, EntityTask) if db_task else None
 
-    def get_tasks(self, skip: int = 0, limit: int = 100, user_id: Optional[UUID] = None, model_id: Optional[UUID] = None) -> list[EntityTask]:
+    def get_tasks(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        user_id: Optional[UUID] = None,
+        model_id: Optional[UUID] = None,
+    ) -> list[EntityTask]:
+
         query = self.db.query(models.Task)
 
-        filters = []
-        if user_id is not None:
-            filters.append(models.Task.user_id == user_id)
-        if model_id is not None:
-            filters.append(models.Task.model_id == model_id)
-
-        if filters:
-            query = query.filter(and_(*filters))
+        if user_id:
+            query = query.filter(user_id == models.Task.user_id)
+        if model_id:
+            query = query.filter(model_id == models.Task.model_id)
 
         db_tasks = query.offset(skip).limit(limit).all()
         return [OrmEntityMapper.to_entity(task, EntityTask) for task in db_tasks]
 
-    def get_tasks_by_user_id(self, user_id: UUID) -> Optional[list[EntityTask]]:
+    def get_tasks_by_user_id(self, user_id: UUID) -> list[EntityTask]:
         db_tasks = self.db.query(models.Task).filter(user_id == models.Task.user_id).all()
-        return [OrmEntityMapper.to_entity(task, EntityTask) for task in db_tasks] if db_tasks else None
+        return [OrmEntityMapper.to_entity(task, EntityTask) for task in db_tasks]
 
     def delete_task_by_id(self, task_id: UUID) -> None:
-        db_task = self.db.query(models.Task).filter(task_id == models.Task.id).first()
-        if db_task:
-            self.db.delete(db_task)
-            self.db.commit()
-
+        self.db.query(models.Task).filter(task_id == models.Task.id).delete()
+        self.db.commit()

@@ -23,7 +23,9 @@ class ModelService:
         if model.dataset_id:
             self._ensure_dataset_exists(model.dataset_id, current_user.id)
 
-        model_object = self.storage.upload_file(file_data, filename, content_type,
+        file_path = f"{str(current_user.id)}/{filename}"
+
+        model_object = self.storage.upload_file(file_data, file_path, content_type,
                                                 settings.MINIO_MODELS_BUCKET)
 
         model.minio_model_path = model_object
