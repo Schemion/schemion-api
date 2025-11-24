@@ -23,6 +23,7 @@ class ModelRepository(IModelRepository):
             name=model.name,
             version=model.version,
             architecture=model.architecture,
+            architecture_profile=model.architecture_profile,
             dataset_id=model.dataset_id,
             minio_model_path=model.minio_model_path,
             status=model.status or ModelStatus.pending,
@@ -34,7 +35,7 @@ class ModelRepository(IModelRepository):
         return OrmEntityMapper.to_entity(db_model, EntityModel)
 
     def get_model_by_id(self, model_id: UUID, user_id: Optional[UUID] = None) -> Optional[EntityModel]:
-        query = self.db.query(models.Model).filter(models.Model.id == model_id)
+        query = self.db.query(models.Model).filter(model_id == models.Model.id)
 
         if user_id:
             query = query.filter(or_(models.Model.is_system == True,models.Model.user_id == user_id))
@@ -63,8 +64,8 @@ class ModelRepository(IModelRepository):
 
     def get_models_by_dataset_id(self, dataset_id: UUID, user_id: UUID) -> list[EntityModel]:
         db_models = (self.db.query(models.Model)
-            .filter(models.Model.dataset_id == dataset_id,
-                or_(
+            .filter(dataset_id == models.Model.dataset_id,
+                    or_(
                     models.Model.is_system == True,
                     models.Model.user_id == user_id
                 )).all()
@@ -72,11 +73,7 @@ class ModelRepository(IModelRepository):
         return [OrmEntityMapper.to_entity(model, EntityModel) for model in db_models]
 
     def delete_model_by_id(self, model_id: UUID, user_id: UUID) -> None:
-        db_model = self.db.query(models.Model).filter(
-            models.Model.id == model_id,
-            models.Model.user_id == user_id,
-            models.Model.is_system == False
-        ).first()
+        db_model = self.db.query(models.Model).filter(model_id == models.Model.id, user_id == models.Model.user_id, False == models.Model.is_system).first()
 
         if db_model:
             self.db.delete(db_model)

@@ -19,6 +19,7 @@ async def create_model(
     name: str = Form(...),
     version: str = Form(...),
     architecture: ModelArchitectures = Form(...),
+    architecture_profile: str = Form(...),
     dataset_id: Optional[UUID] = Form(None),
     status: ModelStatus = Form(ModelStatus.pending),
     file: UploadFile = File(...),
@@ -32,6 +33,7 @@ async def create_model(
         name=name,
         version=version,
         architecture=architecture.value,
+        architecture_profile=architecture_profile,
         dataset_id=dataset_id,
         status=status
     )

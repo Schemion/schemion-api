@@ -9,6 +9,7 @@ class ModelBase(BaseModel):
     name: str
     version: str
     architecture: str
+    architecture_profile: str
     minio_model_path: Optional[str] = None # просто потому что путь к minio появляется в сервисе после загрузки модели
     status: ModelStatus = ModelStatus.pending
 

@@ -10,6 +10,7 @@ class Model:
     name: str
     version: str
     architecture: str
+    architecture_profile: str # для того чтобы указать resnet и тд
     minio_model_path: str
     status: str
     user_id: Optional[uuid.UUID] = None
