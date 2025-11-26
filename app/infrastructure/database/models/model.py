@@ -1,7 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, UUID, String, ForeignKey, func, DateTime, Enum, Boolean
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column, UUID, String, ForeignKey, func, DateTime, Enum, Boolean, ARRAY, Text
 from sqlalchemy.orm import relationship
 
 from app.core.enums import ModelStatus
@@ -16,7 +15,7 @@ class Model(Base):
     version = Column(String(50), nullable=False)
     architecture = Column(String(50), nullable=False)
     architecture_profile = Column(String(512), nullable=False) # resnet или еще что-то
-    classes = Column(JSONB, nullable=True)
+    classes = Column(ARRAY(Text), nullable=True)
     minio_model_path = Column(String(512), nullable=False)
     status = Column(Enum(ModelStatus, name="model_status"), nullable=False, default=ModelStatus.pending)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)

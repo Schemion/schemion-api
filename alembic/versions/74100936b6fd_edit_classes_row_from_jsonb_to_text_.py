@@ -1,18 +1,18 @@
-"""add classes field to models table
+"""edit classes row from jsonb to text array
 
-Revision ID: da9a64e9eab1
+Revision ID: 74100936b6fd
 Revises: 
-Create Date: 2025-11-26 14:25:52.203161
+Create Date: 2025-11-26 17:59:10.570204
 
 """
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+
 
 # revision identifiers, used by Alembic.
-revision: str = 'da9a64e9eab1'
+revision: str = '74100936b6fd'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -55,7 +55,7 @@ def upgrade() -> None:
     sa.Column('version', sa.String(length=50), nullable=False),
     sa.Column('architecture', sa.String(length=50), nullable=False),
     sa.Column('architecture_profile', sa.String(length=512), nullable=False),
-    sa.Column('classes', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('classes', sa.ARRAY(sa.Text()), nullable=True),
     sa.Column('minio_model_path', sa.String(length=512), nullable=False),
     sa.Column('status', sa.Enum('pending', 'training', 'completed', 'failed', name='model_status'), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=True),
