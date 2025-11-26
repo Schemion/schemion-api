@@ -1,7 +1,7 @@
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List
 
 
 @dataclass
@@ -11,6 +11,7 @@ class Model:
     version: str
     architecture: str
     architecture_profile: str # для того чтобы указать resnet и тд
+    classes = Optional[List[str]] # классы для моделей у которых классы по стоку не вшиты
     minio_model_path: str
     status: str
     user_id: Optional[uuid.UUID] = None

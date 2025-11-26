@@ -1,18 +1,18 @@
-"""add arch_profile to models table
+"""add classes field to models table
 
-Revision ID: 7d5ac1c63c0f
+Revision ID: da9a64e9eab1
 Revises: 
-Create Date: 2025-11-25 00:30:11.979777
+Create Date: 2025-11-26 14:25:52.203161
 
 """
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '7d5ac1c63c0f'
+revision: str = 'da9a64e9eab1'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -55,6 +55,7 @@ def upgrade() -> None:
     sa.Column('version', sa.String(length=50), nullable=False),
     sa.Column('architecture', sa.String(length=50), nullable=False),
     sa.Column('architecture_profile', sa.String(length=512), nullable=False),
+    sa.Column('classes', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('minio_model_path', sa.String(length=512), nullable=False),
     sa.Column('status', sa.Enum('pending', 'training', 'completed', 'failed', name='model_status'), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=True),
