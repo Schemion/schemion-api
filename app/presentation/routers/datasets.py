@@ -29,7 +29,7 @@ async def create_dataset(
         num_samples=num_samples or 0
     )
 
-    #TODO: Валидация входящих файлов
+    #TODO: Валидация входящих файлов (вообще то должна быть в сервисе а не тут, но я почему то тут написал)
 
     service = DatasetService(DatasetRepository(db), storage)
     try:
