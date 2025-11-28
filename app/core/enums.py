@@ -1,4 +1,5 @@
-from enum import Enum
+from enum import Enum, IntEnum
+from uuid import UUID
 
 
 class UserRole(str, Enum):
@@ -23,3 +24,44 @@ class QueueTypes(str, Enum):
 class ModelArchitectures(str, Enum):
     faster_rcnn = "faster_rcnn"
     yolo = "yolo"
+
+class CacheTTL(IntEnum):
+    DATASETS = 60
+    MODELS = 120
+    TASKS = 30
+
+class CacheKeysObject(str, Enum):
+    DATASET = "dataset"
+    MODEL = "model"
+    TASK = "task"
+
+    @staticmethod
+    def dataset(dataset_id: UUID):
+        return f"{CacheKeysObject.DATASET}:{dataset_id}"
+
+    @staticmethod
+    def model(model_id: UUID):
+        return f"{CacheKeysObject.MODEL}:{model_id}"
+
+    @staticmethod
+    def task(task_id: UUID):
+        return f"{CacheKeysObject.TASK}:{task_id}"
+
+class CacheKeysList(str, Enum):
+    DATASETS = "datasets"
+    MODELS = "models"
+    TASKS = "tasks"
+
+    @staticmethod
+    def datasets(user_id: UUID):
+        return f"{CacheKeysList.DATASETS}:{user_id}"
+
+    @staticmethod
+    def models(user_id: UUID):
+        return f"{CacheKeysList.MODELS}:{user_id}"
+
+    @staticmethod
+    def tasks(user_id: UUID):
+        return f"{CacheKeysList.TASKS}:{user_id}"
+
+

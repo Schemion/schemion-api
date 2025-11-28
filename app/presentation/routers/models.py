@@ -5,7 +5,7 @@ from typing import Optional
 
 from app.common.security.dependencies import get_current_user
 from app.core.services import ModelService
-from app.dependencies import get_storage, get_db
+from app.dependencies import get_storage, get_db, get_redis
 from app.infrastructure.database.repositories import ModelRepository, DatasetRepository
 from app.presentation.schemas import ModelCreate, ModelRead
 from app.core.enums import ModelStatus, ModelArchitectures
@@ -26,6 +26,7 @@ async def create_model(
     current_user: UserEntity = Depends(get_current_user),
     db: Session = Depends(get_db),
     storage = Depends(get_storage),
+    cache = Depends(get_redis())
 ):
 
 
@@ -38,7 +39,7 @@ async def create_model(
         status=status
     )
 
-    service = ModelService(ModelRepository(db), storage, DatasetRepository(db))
+    service = ModelService(ModelRepository(db), storage, DatasetRepository(db), cache)
     try:
         file_data = await file.read()
         created = service.create_model(
@@ -58,8 +59,8 @@ async def create_model(
 
 
 @router.get("/", response_model=list[ModelRead])
-def get_models(skip: int = 0,limit: int = 100,status: Optional[ModelStatus] = None,dataset_id: Optional[UUID] = None, include_system: bool = True, current_user: UserEntity = Depends(get_current_user), db: Session = Depends(get_db), storage=Depends(get_storage)):
-    service = ModelService(ModelRepository(db), storage, DatasetRepository(db))
+def get_models(skip: int = 0,limit: int = 100,status: Optional[ModelStatus] = None,dataset_id: Optional[UUID] = None, include_system: bool = True, current_user: UserEntity = Depends(get_current_user), db: Session = Depends(get_db), storage=Depends(get_storage), cache = Depends(get_redis())):
+    service = ModelService(ModelRepository(db), storage, DatasetRepository(db), cache)
     return service.get_models(
         current_user=current_user,
         skip=skip,
@@ -71,8 +72,8 @@ def get_models(skip: int = 0,limit: int = 100,status: Optional[ModelStatus] = No
 
 
 @router.get("/{model_id}", response_model=ModelRead)
-def get_model(model_id: UUID, current_user: UserEntity = Depends(get_current_user), db: Session = Depends(get_db),storage=Depends(get_storage)):
-    service = ModelService(ModelRepository(db), storage, DatasetRepository(db))
+def get_model(model_id: UUID, current_user: UserEntity = Depends(get_current_user), db: Session = Depends(get_db),storage=Depends(get_storage), cache = Depends(get_redis())):
+    service = ModelService(ModelRepository(db), storage, DatasetRepository(db), cache)
     model = service.get_model_by_id(model_id, current_user)
     if not model:
         raise HTTPException(status_code=404, detail="Model not found or access denied")
@@ -80,8 +81,8 @@ def get_model(model_id: UUID, current_user: UserEntity = Depends(get_current_use
 
 
 @router.delete("/{model_id}", status_code=204)
-def delete_model(model_id: UUID, current_user: UserEntity = Depends(get_current_user), db: Session = Depends(get_db), storage=Depends(get_storage)):
-    service = ModelService(ModelRepository(db), storage, DatasetRepository(db))
+def delete_model(model_id: UUID, current_user: UserEntity = Depends(get_current_user), db: Session = Depends(get_db), storage=Depends(get_storage), cache = Depends(get_redis()),):
+    service = ModelService(ModelRepository(db), storage, DatasetRepository(db), cache)
     try:
         service.delete_model_by_id(model_id, current_user)
     except PermissionError as e:

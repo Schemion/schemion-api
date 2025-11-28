@@ -5,16 +5,17 @@ from fastapi import HTTPException
 
 from app.config import settings
 from app.core import entities
-from app.core.enums import ModelStatus
-from app.core.interfaces import IModelRepository, IStorageRepository, IDatasetRepository
+from app.core.enums import ModelStatus, CacheKeysObject, CacheKeysList, CacheTTL
+from app.core.interfaces import IModelRepository, IStorageRepository, IDatasetRepository, ICacheRepository
 from app.presentation.schemas import ModelCreate
 
 
 class ModelService:
-    def __init__(self, model_repo: IModelRepository, storage: IStorageRepository, dataset_repo: IDatasetRepository):
+    def __init__(self, model_repo: IModelRepository, storage: IStorageRepository, dataset_repo: IDatasetRepository, cache_repo: ICacheRepository):
         self.model_repo = model_repo
         self.dataset_repo = dataset_repo
         self.storage = storage
+        self.cache_repo = cache_repo
 
     def create_model(self,  model: ModelCreate, file_data: bytes, filename: str, content_type: str, current_user: entities.User) -> entities.Model:
         if not file_data:
@@ -29,14 +30,31 @@ class ModelService:
                                                 settings.MINIO_MODELS_BUCKET)
 
         model.minio_model_path = model_object
-        return self.model_repo.create_model(model, current_user.id, is_system=False)
+        created_model = self.model_repo.create_model(model, current_user.id, is_system=False)
+        cache_key = CacheKeysObject.model(model_id=created_model.id)
+        self.cache_repo.delete(cache_key)
+        return created_model
 
     def get_model_by_id(self, model_id: UUID, current_user: entities.User) -> Optional[entities.Model]:
-        return self.model_repo.get_model_by_id(model_id, current_user.id)
+        cache_key = CacheKeysObject.model(model_id=model_id)
+        cached_model = self.cache_repo.get(cache_key)
+        if cached_model:
+            return cached_model
+        model = self.model_repo.get_model_by_id(model_id, current_user.id)
+        self.cache_repo.set(cache_key, model, expire=CacheTTL.MODELS)
+        return model
 
     def get_models(self, current_user: entities.User, skip: int = 0, limit: int = 100, status: Optional[ModelStatus] = None, dataset_id: Optional[UUID] = None, include_system: bool = True) -> list[entities.Model]:
-        return self.model_repo.get_models(user_id=current_user.id, skip=skip, limit=limit, status=status, dataset_id=dataset_id, include_system=include_system)
+        cache_key = CacheKeysList.models(user_id=current_user.id)
+        cached_models = self.cache_repo.get(cache_key)
+        if cached_models:
+            return cached_models
 
+        models = self.model_repo.get_models(user_id=current_user.id, skip=skip, limit=limit, status=status, dataset_id=dataset_id, include_system=include_system)
+        self.cache_repo.set(cache_key, models, expire=CacheTTL.MODELS)
+        return models
+
+    # TODO: тоже можно добавить кеширование, но потом
     def get_models_by_dataset_id(self, dataset_id: UUID, current_user: entities.User) -> list[entities.Model]:
         self._ensure_dataset_exists(dataset_id, current_user.id)
 
@@ -50,6 +68,8 @@ class ModelService:
 
         self.storage.delete_file(model.minio_model_path, settings.MINIO_MODELS_BUCKET)
         self.model_repo.delete_model_by_id(model_id, current_user.id)
+        cache_key = CacheKeysObject.model(model_id=model_id)
+        self.cache_repo.delete(cache_key)
 
     def _ensure_dataset_exists(self, dataset_id: UUID, user_id: UUID):
         dataset = self.dataset_repo.get_dataset_by_id(dataset_id, user_id)

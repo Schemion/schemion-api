@@ -12,9 +12,7 @@ class CacheService(ICacheRepository):
 
     def get(self, key: str) -> Optional[Any]:
         data = self._redis.get(key)
-        if not data:
-            return None
-        return json.loads(data)
+        return json.loads(data) if data else None
 
     def set(self, key: str, value: Any, expire: int | None = None) -> None:
         if not isinstance(value, str):
