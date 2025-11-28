@@ -5,7 +5,10 @@ load_dotenv()
 
 class Settings:
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://redis:6379/0")
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://admin:admin@database:5432/schemion")
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "redis")
+    REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", "adminpass")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", 6379))
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql+asyncpg://admin:admin@database:5432/schemion")
     RABBITMQ_URL: str = os.getenv("RABBITMQ_URL", "amqp://admin:admin@rabbitmq:5672/")
     JWT_SECRET: str = os.getenv("JWT_SECRET", "supersecret")
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")

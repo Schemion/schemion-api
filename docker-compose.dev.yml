@@ -36,14 +36,18 @@ services:
     command: server /data --console-address ":9001"
 
   redis:
-    image: redis:alpine-7
+    image: redis:7-alpine
     restart: always
     ports:
       - "6379:6379"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=adminpass
+
     command: redis-server --save 120 1 --loglevel warning --requirepass adminpass
     volumes:
       - cache:/data
-
 
   rabbitmq:
     image: rabbitmq:3-management

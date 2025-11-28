@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 
 from app.presentation import schemas
@@ -13,14 +13,14 @@ from app.core.services.user_service import UserService
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=schemas.Token)
-def login_for_access_token(
+async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     user_repo = UserRepository(db)
     user_service = UserService(user_repo)
 
-    user = user_service.get_user_by_email(form_data.username)
+    user = await user_service.get_user_by_email(form_data.username)
     # O2Auth тоже ждет username но ему особо пофиг, поэтому в форме у нас username а по факту email
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -37,9 +37,9 @@ def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/register", response_model=schemas.UserRead)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+async def create_user(user: schemas.UserCreate, db: AsyncSession = Depends(get_db)):
     service = UserService(UserRepository(db))
-    db_user = service.get_user_by_email(str(user.email))
+    db_user = await service.get_user_by_email(str(user.email))
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    return service.create_user(user)
+    return await service.create_user(user)
