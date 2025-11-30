@@ -3,10 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from uuid import UUID
 from typing import Optional
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.container import ApplicationContainer
 from app.core.entities import User as UserEntity
 from app.common.security.dependencies import get_current_user
 from app.core.services import DatasetService
+from app.dependencies import get_db
 from app.presentation.schemas import DatasetCreate, DatasetRead
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
@@ -20,6 +23,7 @@ async def create_dataset(
     num_samples: Optional[int] = Form(None),
     file: UploadFile = File(...),
     current_user: UserEntity = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
     service: DatasetService = Depends(Provide[ApplicationContainer.dataset_service])
 ):
     dataset_create = DatasetCreate(
@@ -37,7 +41,8 @@ async def create_dataset(
             file_data=file_data,
             filename=file.filename,
             content_type=file.content_type or "application/octet-stream",
-            current_user=current_user
+            current_user=current_user,
+            session=db
         )
         file.file.close()
         return DatasetRead.model_validate(created)
@@ -56,9 +61,10 @@ async def get_datasets(
         limit: int = 100,
         name_contains: Optional[str] = None,
         current_user: UserEntity = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
         service: DatasetService = Depends(Provide[ApplicationContainer.dataset_service])
 ):
-    datasets = await service.get_datasets(current_user=current_user, skip=skip, limit=limit, name_contains=name_contains)
+    datasets = await service.get_datasets(session=db, current_user=current_user, skip=skip, limit=limit, name_contains=name_contains)
     return [DatasetRead.model_validate(d) for d in datasets]
 
 
@@ -67,9 +73,10 @@ async def get_datasets(
 async def get_dataset(
         dataset_id: UUID,
         current_user: UserEntity = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
         service: DatasetService = Depends(Provide[ApplicationContainer.dataset_service])
 ):
-    dataset = await service.get_dataset_by_id(dataset_id, current_user)
+    dataset = await service.get_dataset_by_id(db, dataset_id, current_user)
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found or access denied")
     return DatasetRead.model_validate(dataset)
@@ -80,9 +87,10 @@ async def get_dataset(
 async def delete_dataset(
         dataset_id: UUID,
         current_user: UserEntity = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
         service: DatasetService = Depends(Provide[ApplicationContainer.dataset_service])
 ):
     try:
-        await service.delete_dataset_by_id(dataset_id, current_user)
+        await service.delete_dataset_by_id(db,dataset_id, current_user)
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))

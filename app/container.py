@@ -1,6 +1,5 @@
 from dependency_injector import containers, providers
 from app.config import settings
-from app.database import AsyncSessionLocal
 from app.infrastructure.services.cloud_storage.minio_storage import MinioStorage
 from app.infrastructure.services.cache.cache_service import CacheService
 from app.infrastructure.database.repositories import ModelRepository, DatasetRepository, UserRepository, TaskRepository
@@ -19,10 +18,6 @@ class ApplicationContainer(containers.DeclarativeContainer):
 
     config = providers.Configuration()
 
-    db_session = providers.Factory(
-        AsyncSessionLocal
-    )
-
     # Синглетончесы
     storage = providers.Singleton(
         MinioStorage,
@@ -40,22 +35,18 @@ class ApplicationContainer(containers.DeclarativeContainer):
     # репосы
     model_repository = providers.Factory(
         ModelRepository,
-        db=db_session
     )
 
     dataset_repository = providers.Factory(
         DatasetRepository,
-        db=db_session
     )
 
     user_repository = providers.Factory(
         UserRepository,
-        db=db_session
     )
 
     task_repository = providers.Factory(
         TaskRepository,
-        db=db_session
     )
 
     # сервисы
@@ -78,7 +69,8 @@ class ApplicationContainer(containers.DeclarativeContainer):
 
     user_service = providers.Factory(
         UserService,
-        user_repo=user_repository
+        user_repo=user_repository,
+        cache_repo=cache
     )
 
     dataset_service = providers.Factory(

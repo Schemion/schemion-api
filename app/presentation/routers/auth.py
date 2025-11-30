@@ -9,7 +9,6 @@ from app.presentation import schemas
 from app.dependencies import get_db
 from app.common import security
 from app.config import settings
-from app.infrastructure.database.repositories.user_repository import UserRepository
 from app.core.services.user_service import UserService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -18,10 +17,11 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @inject
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db),
     service: UserService = Depends(Provide[ApplicationContainer.user_service])
 ):
 
-    user = await service.get_user_by_email(form_data.username)
+    user = await service.get_user_by_email(db,form_data.username)
     # O2Auth тоже ждет username но ему особо пофиг, поэтому в форме у нас username а по факту email
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -39,8 +39,12 @@ async def login_for_access_token(
 
 @router.post("/register", response_model=schemas.UserRead)
 @inject
-async def create_user(user: schemas.UserCreate, service: UserService = Depends(Provide[ApplicationContainer.user_service])):
-    db_user = await service.get_user_by_email(str(user.email))
+async def create_user(
+        user: schemas.UserCreate,
+        db: AsyncSession = Depends(get_db),
+        service: UserService = Depends(Provide[ApplicationContainer.user_service])
+):
+    db_user = await service.get_user_by_email(db, str(user.email))
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    return await service.create_user(user)
+    return await service.create_user(db, user)

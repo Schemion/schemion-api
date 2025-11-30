@@ -2,9 +2,13 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from uuid import UUID
 from typing import Optional
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.common.security.dependencies import get_current_user
 from app.container import ApplicationContainer
 from app.core.services import ModelService
+from app.dependencies import get_db
 from app.presentation.schemas import ModelCreate, ModelRead
 from app.core.enums import ModelStatus, ModelArchitectures
 from app.core.entities import User as UserEntity
@@ -23,6 +27,7 @@ async def create_model(
     status: ModelStatus = Form(ModelStatus.pending),
     file: UploadFile = File(...),
     current_user: UserEntity = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
     service: ModelService = Depends(Provide[ApplicationContainer.model_service]),
 ):
     model_create = ModelCreate(
@@ -42,6 +47,7 @@ async def create_model(
             filename=file.filename,
             content_type=file.content_type or "application/octet-stream",
             current_user=current_user,
+            session=db
         )
         return ModelRead.model_validate(created)
     except ValueError as e:
@@ -61,6 +67,7 @@ async def get_models(
         dataset_id: Optional[UUID] = None,
         include_system: bool = True,
         current_user: UserEntity = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
         service: ModelService = Depends(Provide[ApplicationContainer.model_service]),
 ):
     models = await service.get_models(
@@ -69,7 +76,8 @@ async def get_models(
         limit=limit,
         status=status,
         dataset_id=dataset_id,
-        include_system=include_system
+        include_system=include_system,
+        session=db
     )
 
     return [ModelRead.model_validate(model) for model in models]
@@ -80,9 +88,10 @@ async def get_models(
 async def get_model(
         model_id: UUID,
         current_user: UserEntity = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
         service: ModelService = Depends(Provide[ApplicationContainer.model_service]),
 ):
-    model = await service.get_model_by_id(model_id, current_user)
+    model = await service.get_model_by_id(db, model_id, current_user)
     if not model:
         raise HTTPException(status_code=404, detail="Model not found or access denied")
     return ModelRead.model_validate(model)
@@ -93,10 +102,11 @@ async def get_model(
 async def delete_model(
         model_id: UUID,
         current_user: UserEntity = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
         service: ModelService = Depends(Provide[ApplicationContainer.model_service]),
 ):
     try:
-        await service.delete_model_by_id(model_id, current_user)
+        await service.delete_model_by_id(db, model_id, current_user)
     except PermissionError as e:
         raise HTTPException(403, str(e))
     except ValueError as e:

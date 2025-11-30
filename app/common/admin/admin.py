@@ -1,8 +1,10 @@
 from uuid import UUID
 
 from dependency_injector.wiring import inject, Provide
+from fastapi import Depends
 from jose import jwt, JWTError
 from sqladmin.authentication import AuthenticationBackend
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -10,6 +12,7 @@ from app.common.security import verify_password, create_access_token
 from app.container import ApplicationContainer
 from app.core.services import UserService
 from app.config import settings
+from app.dependencies import get_db
 
 
 class AdminAuth(AuthenticationBackend):
@@ -20,13 +23,14 @@ class AdminAuth(AuthenticationBackend):
     async def login(
             self,
             request: Request,
+            session: AsyncSession = Depends(get_db),
             user_service: UserService = Provide[ApplicationContainer.user_service]
     ) -> bool:
         form = await request.form()
         # В sqladmin ожидается username, но так как у нас его нет, то будет email но подпись останется username
         email, password = form["username"], form["password"]
 
-        user = await user_service.get_user_by_email(email)
+        user = await user_service.get_user_by_email(session,email)
 
         if not user:
             return False
@@ -47,6 +51,7 @@ class AdminAuth(AuthenticationBackend):
     async def authenticate(
             self,
             request: Request,
+            session: AsyncSession = Depends(get_db),
             user_service: UserService = Provide[ApplicationContainer.user_service]
     ) -> Response | bool:
         token = request.session.get("token")
@@ -60,7 +65,7 @@ class AdminAuth(AuthenticationBackend):
             if not user_id or not user_role:
                 return False
 
-            user = await user_service.get_user_by_id(UUID(user_id))
+            user = await user_service.get_user_by_id(session,UUID(user_id))
             if not user:
                 return False
 

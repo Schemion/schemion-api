@@ -7,10 +7,11 @@ from app.presentation.routers import tasks, datasets, users, models, auth, admin
 container = ApplicationContainer()
 container.config.override({})
 
+app = FastAPI(redirect_slashes=False)
 
-app = FastAPI()
 
-app.add_middleware(AdminGuardMiddleware)
+# TODO: надо доделать
+#app.add_middleware(AdminGuardMiddleware)
 
 app.include_router(auth.router)
 app.include_router(users.router)

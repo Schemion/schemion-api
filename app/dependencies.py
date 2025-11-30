@@ -11,6 +11,7 @@ async def get_db():
         finally:
             await db.close()
 
+
 def get_storage():
     storage = MinioStorage(
         endpoint=settings.MINIO_ENDPOINT,

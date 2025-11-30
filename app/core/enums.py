@@ -29,11 +29,13 @@ class CacheTTL(IntEnum):
     DATASETS = 60
     MODELS = 120
     TASKS = 30
+    USER = 30
 
 class CacheKeysObject(str, Enum):
     DATASET = "dataset"
     MODEL = "model"
     TASK = "task"
+    USER = "user"
 
     @staticmethod
     def dataset(dataset_id: UUID):
@@ -46,6 +48,10 @@ class CacheKeysObject(str, Enum):
     @staticmethod
     def task(task_id: UUID):
         return f"{CacheKeysObject.TASK}:{task_id}"
+
+    @staticmethod
+    def user(user_id: UUID):
+        return f"{CacheKeysObject.USER}:{user_id}"
 
 class CacheKeysList(str, Enum):
     DATASETS = "datasets"
