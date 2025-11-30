@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 
+from app.container import ApplicationContainer
 from app.middleware.admin_guard import AdminGuardMiddleware
 from app.presentation.routers import tasks, datasets, users, models, auth, admin, audit_logs
+
+container = ApplicationContainer()
+container.config.override({})
 
 
 app = FastAPI()
