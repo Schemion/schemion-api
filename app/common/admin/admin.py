@@ -1,31 +1,36 @@
 from uuid import UUID
 
+from dependency_injector.wiring import inject, Provide
+from fastapi import Depends
 from jose import jwt, JWTError
 from sqladmin.authentication import AuthenticationBackend
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 from starlette.responses import Response
 
 from app.common.security import verify_password, create_access_token
+from app.container import ApplicationContainer
 from app.core.services import UserService
-from app.dependencies import get_db
-from app.infrastructure.database.repositories import UserRepository
 from app.config import settings
+from app.dependencies import get_db
 
 
 class AdminAuth(AuthenticationBackend):
     def __init__(self, secret_key: str = settings.JWT_SECRET):
         super().__init__(secret_key=secret_key)
 
-    async def login(self, request: Request) -> bool:
+    @inject
+    async def login(
+            self,
+            request: Request,
+            session: AsyncSession = Depends(get_db),
+            user_service: UserService = Provide[ApplicationContainer.user_service]
+    ) -> bool:
         form = await request.form()
         # В sqladmin ожидается username, но так как у нас его нет, то будет email но подпись останется username
         email, password = form["username"], form["password"]
 
-        db = next(get_db())
-
-        user_repo = UserRepository(db)
-        user_service = UserService(user_repo)
-        user = user_service.get_user_by_email(email)
+        user = await user_service.get_user_by_email(session,email)
 
         if not user:
             return False
@@ -42,7 +47,13 @@ class AdminAuth(AuthenticationBackend):
         request.session.clear()
         return True
 
-    async def authenticate(self, request: Request) -> Response | bool:
+    @inject
+    async def authenticate(
+            self,
+            request: Request,
+            session: AsyncSession = Depends(get_db),
+            user_service: UserService = Provide[ApplicationContainer.user_service]
+    ) -> Response | bool:
         token = request.session.get("token")
         if not token:
             return False
@@ -54,10 +65,7 @@ class AdminAuth(AuthenticationBackend):
             if not user_id or not user_role:
                 return False
 
-            db = next(get_db())
-            user_repo = UserRepository(db)
-            user_service = UserService(user_repo)
-            user = user_service.get_user_by_id(UUID(user_id))
+            user = await user_service.get_user_by_id(session,UUID(user_id))
             if not user:
                 return False
 

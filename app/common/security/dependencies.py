@@ -1,20 +1,26 @@
 from typing import Optional, List
 from uuid import UUID
 
+from dependency_injector.wiring import Provide, inject
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.container import ApplicationContainer
 from app.core.entities.user import User as EntityUser
 from app.core.services import UserService
-from app.dependencies import get_db
 from app.config import settings
-from app.infrastructure.database.repositories import UserRepository
-
+from app.dependencies import get_db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> EntityUser:
+@inject
+async def get_current_user(
+        token: str = Depends(oauth2_scheme),
+        session: AsyncSession = Depends(get_db),
+        user_service: UserService = Depends(Provide[ApplicationContainer.user_service]),
+) -> EntityUser:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate token",
@@ -29,17 +35,14 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except JWTError:
         raise credentials_exception
 
-    user_repo = UserRepository(db)
-    user_service = UserService(user_repo)
-
-    user = user_service.get_user_by_id(user_id)
+    user = await user_service.get_user_by_id(session,user_id)
     if not user:
         raise credentials_exception
 
     return user
 
 def require_roles(roles: List[str]):
-    def role_checker(user: EntityUser = Depends(get_current_user)):
+    async def role_checker(user: EntityUser = Depends(get_current_user)):
         if user.role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

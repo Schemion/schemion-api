@@ -1,26 +1,27 @@
+from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 
+from app.container import ApplicationContainer
 from app.presentation import schemas
 from app.dependencies import get_db
 from app.common import security
 from app.config import settings
-from app.infrastructure.database.repositories.user_repository import UserRepository
 from app.core.services.user_service import UserService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=schemas.Token)
-def login_for_access_token(
+@inject
+async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    service: UserService = Depends(Provide[ApplicationContainer.user_service])
 ):
-    user_repo = UserRepository(db)
-    user_service = UserService(user_repo)
 
-    user = user_service.get_user_by_email(form_data.username)
+    user = await service.get_user_by_email(db,form_data.username)
     # O2Auth тоже ждет username но ему особо пофиг, поэтому в форме у нас username а по факту email
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -37,9 +38,13 @@ def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/register", response_model=schemas.UserRead)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    service = UserService(UserRepository(db))
-    db_user = service.get_user_by_email(str(user.email))
+@inject
+async def create_user(
+        user: schemas.UserCreate,
+        db: AsyncSession = Depends(get_db),
+        service: UserService = Depends(Provide[ApplicationContainer.user_service])
+):
+    db_user = await service.get_user_by_email(db, str(user.email))
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    return service.create_user(user)
+    return await service.create_user(db, user)
