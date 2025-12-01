@@ -10,3 +10,9 @@ class User:
     hashed_password: str
     role: str
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+@dataclass
+class UserLight:
+    id: uuid.UUID
+    email: str
+    role: str
