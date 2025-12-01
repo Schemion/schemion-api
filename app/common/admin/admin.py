@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 from starlette.responses import Response
 
-from app.common.security import verify_password, create_access_token
+from app.common.security import create_access_token
+from app.common.security.hashing import verify_password_async
 from app.container import ApplicationContainer
 from app.core.services import UserService
 from app.config import settings
@@ -34,7 +35,7 @@ class AdminAuth(AuthenticationBackend):
 
         if not user:
             return False
-        if not verify_password(password, user.hashed_password):
+        if not await verify_password_async(password, user.hashed_password):
             return False
 
         token = create_access_token({"sub": str(user.id), "role": user.role})

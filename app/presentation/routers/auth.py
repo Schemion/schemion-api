@@ -23,7 +23,7 @@ async def login_for_access_token(
 
     user = await service.get_user_by_email(db,form_data.username)
     # O2Auth тоже ждет username но ему особо пофиг, поэтому в форме у нас username а по факту email
-    if not user or not security.verify_password(form_data.password, user.hashed_password):
+    if not user or not await security.verify_password_async(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -32,7 +32,11 @@ async def login_for_access_token(
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
-        data={"sub": str(user.id)},
+        data={
+            "sub": str(user.id),
+            "role": user.role,
+            "email": user.email
+        },
         expires_delta=access_token_expires,
     )
     return {"access_token": access_token, "token_type": "bearer"}
