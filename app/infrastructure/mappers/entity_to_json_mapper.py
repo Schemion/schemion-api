@@ -24,15 +24,21 @@ class EntityJsonMapper:
         return json.dumps(data, default=default_json_serializer)
 
     @staticmethod
-    def from_json(json_str_or_dict: Union[str, dict, List[dict]], schema_cls: Type[TSchema], as_list: bool = False) -> Union[TSchema, List[TSchema]]:
+    def from_json(json_str_or_dict: Union[str, dict, List[dict]], schema_cls: Type[TSchema]) -> TSchema:
         if isinstance(json_str_or_dict, str):
             data = json.loads(json_str_or_dict)
         else:
             data = json_str_or_dict
 
-        if as_list:
-            return [schema_cls(**item) for item in data]
         return schema_cls(**data)
+
+    @staticmethod
+    def from_json_as_list(json_str_or_dict: Union[str, dict, List[dict]], schema_cls: Type[TSchema]) -> List[TSchema]:
+        if isinstance(json_str_or_dict, str):
+            data = json.loads(json_str_or_dict)
+        else:
+            data = json_str_or_dict
+        return [schema_cls(**item) for item in data]
 
     @staticmethod
     def _to_dict(entity: TEntity, schema_cls: Type[TSchema]) -> dict:

@@ -1,30 +1,28 @@
 import json
-from typing import Any, Optional
-
+from typing import Any, Optional, Union
+from redis import RedisError
 from redis.asyncio import Redis
-
-from app.config import settings
 from app.core.interfaces import ICacheRepository
+
 
 class CacheService(ICacheRepository):
     def __init__(self, url: str):
         self._redis = Redis.from_url(
             url,
             decode_responses=True,
-            host=settings.REDIS_HOST,
-            port=settings.REDIS_PORT,
-            password=settings.REDIS_PASSWORD,
         )
 
-
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Optional[Union[dict, list]]:
         data = await self._redis.get(key)
         return json.loads(data) if data else None
 
     async def set(self, key: str, value: Any, expire: int | None = None) -> None:
-        if not isinstance(value, str):
-            value = json.dumps(value)
+        value = json.dumps(value, default=str)
         await self._redis.set(key, value, ex=expire)
 
     async def delete(self, key: str) -> None:
         await self._redis.delete(key)
+
+    async def delete_pattern(self, pattern: str) -> None:
+        async for key in self._redis.scan_iter(match=pattern):
+            await self._redis.delete(key)

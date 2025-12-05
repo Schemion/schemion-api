@@ -1,4 +1,5 @@
 from enum import Enum, IntEnum
+from typing import Optional
 from uuid import UUID
 
 
@@ -26,10 +27,10 @@ class ModelArchitectures(str, Enum):
     yolo = "yolo"
 
 class CacheTTL(IntEnum):
-    DATASETS = 60
-    MODELS = 120
-    TASKS = 30
-    USER = 30
+    DATASETS = 60 * 60
+    MODELS = 120 * 60
+    TASKS = 30 * 60
+    USER = 30 * 60
 
 class CacheKeysObject(str, Enum):
     DATASET = "dataset"
@@ -63,8 +64,10 @@ class CacheKeysList(str, Enum):
         return f"{CacheKeysList.DATASETS}:{user_id}"
 
     @staticmethod
-    def models(user_id: UUID):
-        return f"{CacheKeysList.MODELS}:{user_id}"
+    def models(user_id: UUID, skip: int = 0, limit: int = 100, status: Optional[str] = None, dataset_id: Optional[UUID] = None) -> str:
+        s_val = status if status else "any"
+        d_val = str(dataset_id) if dataset_id else "all"
+        return f"{CacheKeysList.MODELS}:{user_id}:{skip}:{limit}:{s_val}:{d_val}"
 
     @staticmethod
     def tasks(user_id: UUID):
