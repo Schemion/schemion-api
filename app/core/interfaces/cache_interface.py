@@ -14,3 +14,7 @@ class ICacheRepository(ABC):
     @abstractmethod
     async def delete(self, key: str) -> None:
         ...
+
+    @abstractmethod
+    async def delete_pattern(self, pattern: str) -> None:
+        ...

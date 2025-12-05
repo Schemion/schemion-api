@@ -33,36 +33,33 @@ class ModelService:
 
         model.minio_model_path = model_object
         created_model = await self.model_repo.create_model(session, model, current_user.id, is_system=False)
+        pattern = f"{CacheKeysList.MODELS}:{current_user.id}:*"
         await self.cache_repo.delete(CacheKeysObject.model(model_id=created_model.id))
-        await self.cache_repo.delete(CacheKeysList.models(user_id=current_user.id))
+        await self.cache_repo.delete_pattern(pattern)
         return created_model
 
     async def get_model_by_id(self, session: AsyncSession, model_id: UUID, current_user: entities.User) -> Optional[entities.Model]:
         cache_key = CacheKeysObject.model(model_id=model_id)
-        cached_model = await self.cache_repo.get(cache_key)
+        cached_model: dict | None = await self.cache_repo.get(cache_key)
         if cached_model:
             return EntityJsonMapper.from_json(cached_model, entities.Model)
         model = await self.model_repo.get_model_by_id(session, model_id, current_user.id)
-        model_schema = EntityJsonMapper.to_json(model, ModelRead)
-        await self.cache_repo.set(cache_key, model_schema, expire=CacheTTL.MODELS.value)
+        if model:
+            model_schema = EntityJsonMapper.to_json(model, ModelRead)
+            await self.cache_repo.set(cache_key, model_schema, expire=CacheTTL.MODELS.value)
         return model
 
     async def get_models(self, session: AsyncSession, current_user: entities.User, skip: int = 0, limit: int = 100, status: Optional[ModelStatus] = None, dataset_id: Optional[UUID] = None, include_system: bool = True) -> list[entities.Model]:
-        cache_key = CacheKeysList.models(user_id=current_user.id)
-        cached_models = await self.cache_repo.get(cache_key)
+        cache_key = CacheKeysList.models(user_id=current_user.id, skip=skip,limit=limit,status=status.value if status else None, dataset_id=dataset_id)
+        cached_models: dict | None = await self.cache_repo.get(cache_key)
         if cached_models:
-            return EntityJsonMapper.from_json(cached_models, entities.Model, as_list=True)
+            return EntityJsonMapper.from_json_as_list(cached_models, entities.Model)
 
         models = await self.model_repo.get_models(db=session, user_id=current_user.id, skip=skip, limit=limit, status=status, dataset_id=dataset_id, include_system=include_system)
         models_schema = EntityJsonMapper.to_json(models, ModelRead)
         await self.cache_repo.set(cache_key, models_schema, expire=CacheTTL.MODELS.value)
         return models
 
-    # TODO: тоже можно добавить кеширование, но потом
-    async def get_models_by_dataset_id(self, session: AsyncSession, dataset_id: UUID, current_user: entities.User) -> list[entities.Model]:
-        await self._ensure_dataset_exists(session, dataset_id, current_user.id)
-
-        return await self.model_repo.get_models_by_dataset_id(session,dataset_id=dataset_id, user_id=current_user.id)
 
     async def delete_model_by_id(self, session: AsyncSession, model_id: UUID, current_user: entities.User) -> None:
         model = await self._ensure_model_exists(session, model_id, current_user.id)
@@ -72,8 +69,9 @@ class ModelService:
 
         await self.storage.delete_file(model.minio_model_path, settings.MINIO_MODELS_BUCKET)
         await self.model_repo.delete_model_by_id(session, model_id, current_user.id)
-        cache_key = CacheKeysObject.model(model_id=model_id)
-        await self.cache_repo.delete(cache_key)
+        await self.cache_repo.delete(CacheKeysObject.model(model_id=model_id))
+        pattern = f"{CacheKeysList.MODELS}:{current_user.id}:*"
+        await self.cache_repo.delete_pattern(pattern)
 
     async def _ensure_dataset_exists(self, session: AsyncSession, dataset_id: UUID, user_id: UUID):
         dataset = await self.dataset_repo.get_dataset_by_id(session, dataset_id, user_id)

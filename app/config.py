@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings:
-    REDIS_URL: str = os.getenv("REDIS_URL", "redis://redis:6379/0")
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://:adminpass@redis:6379/0")
     REDIS_HOST: str = os.getenv("REDIS_HOST", "redis")
     REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", "adminpass")
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", 6379))

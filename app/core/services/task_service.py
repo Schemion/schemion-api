@@ -24,7 +24,10 @@ class TaskService:
         self.cache_repo = cache_repo
 
     async def create_inference_task(self, session: AsyncSession, task: TaskCreate, file_data: bytes, filename: str, content_type: str, current_user: entities.User) -> entities.Task:
-        await self._ensure_model_exists(session, task.model_id)
+        if task.model_id:
+            await self._ensure_model_exists(session, task.model_id)
+        else:
+            raise HTTPException(status_code=400, detail=f"Model with id {task.model_id} does not exist.")
 
         allowed_types = ["image/jpeg", "image/png", "application/pdf"]
         if content_type not in allowed_types:
@@ -36,6 +39,7 @@ class TaskService:
         task.input_path = input_object_path
         created = await self.task_repo.create_inference_task(session, task)
         model = await self.model_repo.get_model_by_id(session, task.model_id)
+
 
         message = {
             "task_id": str(created.id),
@@ -52,20 +56,15 @@ class TaskService:
         return created
 
     async def create_training_task(self, session: AsyncSession, task: TaskCreate) -> entities.Task:
-        await self._ensure_model_exists(session, task.model_id)
-
         if task.dataset_id:
             await self._ensure_dataset_exists(session, task.dataset_id)
 
         created = await self.task_repo.create_training_task(session, task)
-        model = await self.model_repo.get_model_by_id(session, task.model_id)
 
         message = {
             "task_id": str(created.id),
             "task_type": TaskStatus.training,
-            "model_id": str(task.model_id),
-            "model_arch": model.architecture if hasattr(model, "architecture") else None,
-            "dataset_id": str(task.dataset_id) if task.dataset_id else None,
+            "dataset_id": str(task.dataset_id),
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
@@ -76,7 +75,7 @@ class TaskService:
 
     async def get_task_by_id(self, session: AsyncSession, task_id: UUID, current_user: entities.User) -> entities.Task:
         cache_key = CacheKeysObject.task(task_id=task_id)
-        cached_task = await self.cache_repo.get(cache_key)
+        cached_task: dict | None = await self.cache_repo.get(cache_key)
         if cached_task:
             return EntityJsonMapper.from_json(cached_task, entities.Task)
         task = await self.task_repo.get_task_by_id(session,task_id)
@@ -92,17 +91,13 @@ class TaskService:
 
     async def get_tasks(self, session: AsyncSession, current_user: entities.User, skip: int = 0, limit: int = 100) -> list[entities.Task]:
         cache_key = CacheKeysList.tasks(user_id=current_user.id)
-        cached_tasks = await self.cache_repo.get(cache_key)
+        cached_tasks: dict | None = await self.cache_repo.get(cache_key)
         if cached_tasks:
-            return EntityJsonMapper.from_json(cached_tasks, entities.Task, as_list=True)
+            return EntityJsonMapper.from_json_as_list(cached_tasks, entities.Task)
         tasks = await self.task_repo.get_tasks(session, skip, limit, user_id=current_user.id)
         tasks_schema = EntityJsonMapper.to_json(tasks, TaskRead)
         await self.cache_repo.set(cache_key, tasks_schema, expire=CacheTTL.TASKS.value)
         return tasks
-
-    # TODO: подумать зачем вообще эта ручка, она вообще вроде как не нужна
-    async def get_tasks_by_user_id(self, session: AsyncSession, user_id: UUID) -> list[entities.Task]:
-        return await self.task_repo.get_tasks_by_user_id(session, user_id)
 
     async def delete_task_by_id(self, session: AsyncSession, task_id: UUID, current_user:entities.User) -> None:
         task = await self.task_repo.get_task_by_id(session, task_id)

@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
 
+from app.core.entities import Dataset, Model, User
 from app.core.enums import UserRole
 from app.infrastructure.database import models
 from app.presentation import schemas
@@ -25,7 +26,7 @@ class UserRepository(IUserRepository):
         db_user = result.scalar_one_or_none()
         return OrmEntityMapper.to_entity(db_user, EntityUser) if db_user else None
 
-    async def create_user(self, db: AsyncSession, user: schemas.UserCreate) -> EntityUser:
+    async def create_user(self, db: AsyncSession, user: schemas.UserCreate) -> User | None:
         hashed_password = pwd_context.hash(user.password)
         db_user = models.User(
             email=user.email,
@@ -43,7 +44,7 @@ class UserRepository(IUserRepository):
         db_user = result.scalar_one_or_none()
         return OrmEntityMapper.to_entity(db_user, EntityUser) if db_user else None
 
-    async def get_user_datasets(self, db: AsyncSession, user_id: UUID) -> List[EntityDataset]:
+    async def get_user_datasets(self, db: AsyncSession, user_id: UUID) -> list[Dataset | None]:
         query = (
             select(models.Dataset)
             .where(user_id == models.Dataset.user_id)
@@ -52,7 +53,7 @@ class UserRepository(IUserRepository):
         db_datasets = result.scalars().all()
         return [OrmEntityMapper.to_entity(d, EntityDataset) for d in db_datasets]
 
-    async def get_user_models(self, db: AsyncSession, user_id: UUID) -> List[EntityModel]:
+    async def get_user_models(self, db: AsyncSession, user_id: UUID) -> list[Model | None]:
         query = (
             select(models.Model)
             .where(

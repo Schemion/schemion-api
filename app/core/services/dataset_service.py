@@ -32,7 +32,7 @@ class DatasetService:
 
     async def get_dataset_by_id(self, session: AsyncSession, dataset_id: UUID, current_user: entities.User) -> Optional[entities.Dataset]:
         cache_key = CacheKeysObject.dataset(dataset_id=dataset_id)
-        cached_dataset = await self.cache_repo.get(cache_key)
+        cached_dataset: dict | None = await self.cache_repo.get(cache_key)
         if cached_dataset:
             return EntityJsonMapper.from_json(cached_dataset, entities.Dataset)
 
@@ -50,9 +50,9 @@ class DatasetService:
             name_contains: Optional[str] = None,
     ) -> list[entities.Dataset]:
         cache_key = CacheKeysList.datasets(user_id=current_user.id)
-        cached_datasets = await self.cache_repo.get(cache_key)
+        cached_datasets : dict | None= await self.cache_repo.get(cache_key)
         if cached_datasets:
-            return EntityJsonMapper.from_json(cached_datasets, entities.Dataset, as_list=True)
+            return EntityJsonMapper.from_json_as_list(cached_datasets, entities.Dataset)
 
         datasets = await self.dataset_repo.get_datasets(db = session, user_id=current_user.id, skip=skip, limit=limit, name_contains=name_contains)
         datasets_schema = EntityJsonMapper.to_json(datasets, DatasetRead)
