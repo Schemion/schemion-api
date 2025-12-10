@@ -60,8 +60,10 @@ class CacheKeysList(str, Enum):
     TASKS = "tasks"
 
     @staticmethod
-    def datasets(user_id: UUID):
-        return f"{CacheKeysList.DATASETS}:{user_id}"
+    def datasets(user_id: UUID, skip: int = 0, limit: int = 100, name_contains: Optional[str] = None):
+        name_contains_val = name_contains if name_contains else ""
+
+        return f"{CacheKeysList.DATASETS}:{user_id}:{skip}:{limit}:{name_contains_val}"
 
     @staticmethod
     def models(user_id: UUID, skip: int = 0, limit: int = 100, status: Optional[str] = None, dataset_id: Optional[UUID] = None) -> str:

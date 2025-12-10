@@ -27,7 +27,8 @@ class DatasetService:
 
         created_dataset = await self.dataset_repo.create_dataset(session,dataset, current_user.id)
         await self.cache_repo.delete(CacheKeysObject.dataset(dataset_id=created_dataset.id))
-        await self.cache_repo.delete(CacheKeysList.datasets(user_id=current_user.id))
+        pattern = f"{CacheKeysList.DATASETS}:{current_user.id}:*"
+        await self.cache_repo.delete_pattern(pattern)
         return created_dataset
 
     async def get_dataset_by_id(self, session: AsyncSession, dataset_id: UUID, current_user: entities.User) -> Optional[entities.Dataset]:
@@ -49,7 +50,7 @@ class DatasetService:
             limit: int = 100,
             name_contains: Optional[str] = None,
     ) -> list[entities.Dataset]:
-        cache_key = CacheKeysList.datasets(user_id=current_user.id)
+        cache_key = CacheKeysList.datasets(user_id=current_user.id, skip=skip, limit=limit, name_contains=name_contains)
         cached_datasets : dict | None= await self.cache_repo.get(cache_key)
         if cached_datasets:
             return EntityJsonMapper.from_json_as_list(cached_datasets, entities.Dataset)
@@ -64,8 +65,9 @@ class DatasetService:
 
         await self.storage.delete_file(dataset.minio_path, settings.MINIO_DATASETS_BUCKET)
         await self.dataset_repo.delete_dataset_by_id(session, dataset_id)
-        cache_key = CacheKeysObject.dataset(dataset_id=dataset_id)
-        await self.cache_repo.delete(cache_key)
+        await self.cache_repo.delete(CacheKeysObject.dataset(dataset_id=dataset_id))
+        pattern = f"{CacheKeysList.DATASETS}:{current_user.id}:*"
+        await self.cache_repo.delete(pattern)
 
     async def _ensure_dataset_exists(self, session: AsyncSession ,dataset_id: UUID, user_id: UUID):
         dataset = await self.dataset_repo.get_dataset_by_id(session, dataset_id, user_id)
