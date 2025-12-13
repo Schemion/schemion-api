@@ -24,7 +24,6 @@ async def create_model(
     architecture: ModelArchitectures = Form(...),
     architecture_profile: str = Form(...),
     dataset_id: Optional[UUID] = Form(None),
-    status: ModelStatus = Form(ModelStatus.pending),
     file: UploadFile = File(...),
     current_user: UserEntity = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -36,7 +35,7 @@ async def create_model(
         architecture=architecture.value,
         architecture_profile=architecture_profile,
         dataset_id=dataset_id,
-        status=status
+        status=ModelStatus.pending
     )
 
     try:

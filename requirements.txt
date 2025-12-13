@@ -78,6 +78,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
 python-engineio==4.12.3
 python-jose==3.5.0
+python-magic==0.4.27
 python-multipart==0.0.20
 python-socketio==5.15.0
 PyYAML==3.11
