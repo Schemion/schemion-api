@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from dependency_injector.wiring import inject, Provide
 from fastapi import Request
 from jose import jwt, JWTError
@@ -9,8 +11,7 @@ from app.config import settings
 from app.container import ApplicationContainer
 from app.core.enums import UserRole
 from app.core.services import UserService
-from app.dependencies import get_db
-from app.infrastructure.database.repositories import UserRepository
+from app.dependencies import get_db_session
 
 
 # Нужно чтобы прятать от случайных юзеров сам факт наличия админ панели
@@ -40,11 +41,11 @@ class AdminGuardMiddleware(BaseHTTPMiddleware):
                 if not user_id:
                     return JSONResponse(status_code=404, content={"detail": "Not Found"})
 
+                async with get_db_session() as session:
+                    user = await user_service.get_user_by_id(session, UUID(user_id))
 
-                user = await user_service.get_user_by_id(user_id)
-
-                if not user or user.role != UserRole.admin:
-                    return JSONResponse(status_code=404, content={"detail": "Not Found"})
+                    if not user or user.role != UserRole.admin.value:
+                        return JSONResponse(status_code=404, content={"detail": "Not Found"})
 
             except JWTError:
                 return JSONResponse(status_code=404, content={"detail": "Not Found"})

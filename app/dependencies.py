@@ -1,7 +1,5 @@
-from app.config import settings
+from contextlib import asynccontextmanager
 from app.database import AsyncSessionLocal
-from app.infrastructure.services.cache.cache_service import CacheService
-from app.infrastructure.services.cloud_storage.minio_storage import MinioStorage
 
 
 async def get_db():
@@ -11,14 +9,7 @@ async def get_db():
         finally:
             await db.close()
 
-
-def get_storage():
-    storage = MinioStorage(
-        endpoint=settings.MINIO_ENDPOINT,
-        access_key=settings.MINIO_ACCESS_KEY,
-        secret_key=settings.MINIO_SECRET_KEY,
-    )
-    return storage
-
-def get_redis():
-    return CacheService(settings.REDIS_URL)
+@asynccontextmanager
+async def get_db_session():
+    async for db in get_db():
+        yield db

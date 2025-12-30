@@ -13,7 +13,7 @@ from app.common.security.hashing import verify_password_async
 from app.container import ApplicationContainer
 from app.core.services import UserService
 from app.config import settings
-from app.dependencies import get_db
+from app.dependencies import get_db_session
 
 
 class AdminAuth(AuthenticationBackend):
@@ -24,25 +24,25 @@ class AdminAuth(AuthenticationBackend):
     async def login(
             self,
             request: Request,
-            session: AsyncSession = Depends(get_db),
             user_service: UserService = Provide[ApplicationContainer.user_service]
     ) -> bool:
         form = await request.form()
         # В sqladmin ожидается username, но так как у нас его нет, то будет email но подпись останется username
         email, password = form["username"], form["password"]
 
-        user = await user_service.get_user_by_email(session,email)
+        async with get_db_session() as session:
+            user = await user_service.get_user_by_email(session, email)
 
-        if not user:
-            return False
-        if not await verify_password_async(password, user.hashed_password):
-            return False
+            if not user:
+                return False
+            if not await verify_password_async(password, user.hashed_password):
+                return False
 
-        token = create_access_token({"sub": str(user.id), "role": user.role})
+            token = create_access_token({"sub": str(user.id), "role": user.role})
 
-        request.session.update({"token": token})
+            request.session.update({"token": token})
 
-        return True
+            return True
 
     async def logout(self, request: Request) -> Response | bool:
         request.session.clear()
@@ -52,7 +52,6 @@ class AdminAuth(AuthenticationBackend):
     async def authenticate(
             self,
             request: Request,
-            session: AsyncSession = Depends(get_db),
             user_service: UserService = Provide[ApplicationContainer.user_service]
     ) -> Response | bool:
         token = request.session.get("token")
@@ -66,12 +65,15 @@ class AdminAuth(AuthenticationBackend):
             if not user_id or not user_role:
                 return False
 
-            user = await user_service.get_user_by_id(session,UUID(user_id))
-            if not user:
-                return False
+            async with get_db_session() as session:
+                user = await user_service.get_user_by_id(session, user_id)
 
-            if user_role != "admin":
-                return False
+
+                if not user:
+                    return False
+
+                if user_role != "admin":
+                    return False
         except JWTError:
             return False
 

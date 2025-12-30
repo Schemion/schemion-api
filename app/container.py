@@ -12,7 +12,8 @@ class ApplicationContainer(containers.DeclarativeContainer):
         packages=[
             "app.presentation.routers",
             "app.common.admin",
-            "app.common.security"
+            "app.common.security",
+            "app.middleware"
         ]
     )
 
