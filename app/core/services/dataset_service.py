@@ -112,13 +112,6 @@ class DatasetService:
         if not filename.lower().endswith(ALLOWED_EXTENSION):
             raise HTTPException(400, f"Only {ALLOWED_EXTENSION} files are allowed")
 
-        try:
-            mime_type = magic.from_buffer(file_data[:4096], mime=True)
-        except Exception as e:
-            raise HTTPException(400, f"Failed to detect mime type: {e}")
-
-        if mime_type not in ALLOWED_MIME_TYPES:
-            raise HTTPException(400, "Invalid zip file type")
 
         try:
             with zipfile.ZipFile(BytesIO(file_data)) as zf:
