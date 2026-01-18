@@ -20,7 +20,7 @@ MAX_FILENAME_LENGTH = 255
 FILENAME_REGEX = re.compile(r'^[a-zA-Z0-9_\-.\s]+$')
 ALLOWED_EXTENSION = '.zip'
 IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'bmp', 'tiff'}
-TEXT_EXTENSIONS = {'csv', 'txt'}
+TEXT_EXTENSIONS = {'csv', 'txt', 'yml', 'yaml'}
 ALLOWED_MIME_TYPES = {'application/zip', 'application/x-zip-compressed'}
 MAX_DATASET_FILE_SIZE = 5 * 1024 ** 3 # 5 гигабухтов
 

@@ -51,6 +51,7 @@ async def create_inference_task(
 @inject
 async def create_training_task(
         current_user: User = Depends(get_current_user),
+        model_id: UUID = Form(...),
         dataset_id: UUID = Form(...),
         db: AsyncSession = Depends(get_db),
         service: TaskService = Depends(Provide[ApplicationContainer.task_service])
@@ -58,6 +59,7 @@ async def create_training_task(
     task_create = TaskCreate(
         user_id=current_user.id,
         task_type=TaskStatus.training,
+        model_id=model_id,
         dataset_id=dataset_id,
     )
     try:

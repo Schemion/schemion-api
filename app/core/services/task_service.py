@@ -58,12 +58,13 @@ class TaskService:
     async def create_training_task(self, session: AsyncSession, task: TaskCreate) -> entities.Task:
         if task.dataset_id:
             await self._ensure_dataset_exists(session, task.dataset_id)
-
+        # TODO: Добавить проверку на то, что модель системная, так как у меня по сути дообучение, так как обучение очень затратно
         created = await self.task_repo.create_training_task(session, task)
 
         message = {
             "task_id": str(created.id),
             "task_type": TaskStatus.training,
+            "model_id": str(task.model_id),
             "dataset_id": str(task.dataset_id),
             "timestamp": datetime.now(timezone.utc).isoformat()
         }

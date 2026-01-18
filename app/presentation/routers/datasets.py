@@ -20,7 +20,7 @@ router = APIRouter(prefix="/datasets", tags=["datasets"])
 async def create_dataset(
     name: str = Form(...),
     description: Optional[str] = Form(None),
-    num_samples: Optional[int] = Form(None),
+    num_samples: Optional[int] = Form(None), # как будто можно убрать и просто смотреть сколько файлов прям при обучении
     file: UploadFile = File(...),
     current_user: UserEntity = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
