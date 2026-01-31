@@ -1,10 +1,6 @@
-from uuid import UUID
-
 from dependency_injector.wiring import inject, Provide
-from fastapi import Depends
 from jose import jwt, JWTError
 from sqladmin.authentication import AuthenticationBackend
-from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 from starlette.responses import Response
 

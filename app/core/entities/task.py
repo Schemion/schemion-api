@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
 
-# TODO: наверное можно добавить model_status (error, pending, complete) чтобы юзер в лк отслеживал статусы задач
+# TODO: наверное можно добавить task_status (error, pending, complete) чтобы юзер в лк отслеживал статусы задач
 @dataclass
 class Task:
     id: uuid.UUID

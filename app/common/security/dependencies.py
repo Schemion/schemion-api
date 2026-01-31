@@ -1,12 +1,15 @@
-from typing import Optional, List
+from typing import List, Optional, Set
 from uuid import UUID
-from jose import JWTError, jwt
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from app.core.entities.user import UserLight as EntityUser
+from jose import JWTError, jwt
+
 from app.config import settings
+from app.core.entities.user import UserLight as EntityUser
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+
 
 async def get_current_user(
         token: str = Depends(oauth2_scheme),
@@ -21,29 +24,27 @@ async def get_current_user(
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
 
         user_id: Optional[str] = payload.get("sub")
-        role: Optional[str] = payload.get("role")
+        roles: Set[str] = payload.get("roles", [])
         email: Optional[str] = payload.get("email")
-        if user_id is None or role is None:
+        if not user_id or not roles:
             raise credentials_exception
 
-        user = EntityUser(
+        return EntityUser(
             id=UUID(user_id),
-            role=role,
-            email=email
+            roles=roles,
+            email=email,
         )
-
-        return user
     except JWTError:
         raise credentials_exception
     except ValueError:
         raise credentials_exception
 
-def require_roles(roles: List[str]):
-    async def role_checker(user: EntityUser = Depends(get_current_user)):
-        if user.role not in roles:
+def require_roles(allowed_roles: List[str]):
+    async def checker(user: EntityUser = Depends(get_current_user),) -> EntityUser:
+        if not any(role in allowed_roles for role in user.roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not enough rights"
+                detail="Not enough rights",
             )
         return user
-    return role_checker
+    return checker

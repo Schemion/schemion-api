@@ -31,8 +31,12 @@ class UserRepository(IUserRepository):
         db_user = models.User(
             email=user.email,
             hashed_password=hashed_password,
-            role = UserRole.user
         )
+        result = await db.execute(
+            select(models.Role).where(models.Role.name == UserRole.user.value)
+        )
+        default_role = result.scalar_one()
+        db_user.user_roles.append(models.UserRole(role=default_role))
         db.add(db_user)
         await db.commit()
         await db.refresh(db_user)
