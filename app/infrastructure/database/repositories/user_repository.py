@@ -2,62 +2,63 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional, List
+from typing import Optional
 
-from app.core.entities import Dataset, Model, User
+from sqlalchemy.orm import selectinload
+
 from app.core.enums import UserRole
 from app.infrastructure.database import models
 from app.presentation import schemas
 from app.core.interfaces.user_interface import IUserRepository
-from app.core.entities.dataset import Dataset as EntityDataset
-from app.core.entities.model import Model as EntityModel
-from app.core.entities.user import User as EntityUser
 from passlib.context import CryptContext
-from app.infrastructure.mappers import OrmEntityMapper
+from app.infrastructure.database.models import User, Dataset, Model
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class UserRepository(IUserRepository):
-    async def get_user_by_email(self, db: AsyncSession, email: str) -> Optional[EntityUser]:
-        query = select(models.User).where(email == models.User.email)
-        result = await db.execute(query)
-        db_user = result.scalar_one_or_none()
-        return OrmEntityMapper.to_entity(db_user, EntityUser) if db_user else None
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def create_user(self, db: AsyncSession, user: schemas.UserCreate) -> User | None:
+    async def get_user_by_email(self, email: str) -> Optional[User]:
+        query = select(models.User).where(email == models.User.email).options(selectinload(models.User.user_roles).selectinload(models.UserRole.role))
+        result = await self.session.execute(query)
+        db_user = result.scalar_one_or_none()
+        return db_user if db_user else None
+
+    async def create_user(self, user: schemas.UserCreate) -> User | None:
         hashed_password = pwd_context.hash(user.password)
         db_user = models.User(
             email=user.email,
             hashed_password=hashed_password,
         )
-        result = await db.execute(
+        result = await self.session.execute(
             select(models.Role).where(models.Role.name == UserRole.user.value)
         )
         default_role = result.scalar_one()
         db_user.user_roles.append(models.UserRole(role=default_role))
-        db.add(db_user)
-        await db.commit()
-        await db.refresh(db_user)
-        return OrmEntityMapper.to_entity(db_user, EntityUser)
+        self.session.add(db_user)
+        await self.session.commit()
+        await self.session.refresh(db_user)
+        return db_user
 
-    async def get_user_by_id(self, db: AsyncSession, user_id: UUID) -> Optional[EntityUser]:
-        query = select(models.User).where(user_id == models.User.id)
-        result = await db.execute(query)
+    async def get_user_by_id(self, user_id: UUID) -> Optional[User]:
+        query = select(models.User).where(user_id == models.User.id).options(selectinload(models.User.user_roles).selectinload(models.UserRole.role))
+        result = await self.session.execute(query)
         db_user = result.scalar_one_or_none()
-        return OrmEntityMapper.to_entity(db_user, EntityUser) if db_user else None
+        return db_user if db_user else None
 
-    async def get_user_datasets(self, db: AsyncSession, user_id: UUID) -> list[Dataset | None]:
+    async def get_user_datasets(self, user_id: UUID) -> list[Dataset]:
         query = (
             select(models.Dataset)
             .where(user_id == models.Dataset.user_id)
         )
-        result = await db.execute(query)
+        result = await self.session.execute(query)
         db_datasets = result.scalars().all()
-        return [OrmEntityMapper.to_entity(d, EntityDataset) for d in db_datasets]
+        return [dataset for dataset in db_datasets]
 
-    async def get_user_models(self, db: AsyncSession, user_id: UUID) -> list[Model | None]:
+    async def get_user_models(self, user_id: UUID) -> list[Model]:
         query = (
             select(models.Model)
             .where(
@@ -65,7 +66,7 @@ class UserRepository(IUserRepository):
                 models.Model.is_system.is_(False)
             )
         )
-        result = await db.execute(query)
+        result = await self.session.execute(query)
         db_models = result.scalars().all()
-        return [OrmEntityMapper.to_entity(m, EntityModel) for m in db_models]
+        return [model for model in db_models]
 

@@ -27,6 +27,7 @@ click-repl==0.3.0
 colorama==0.4.6
 ConfigArgParse==1.7.1
 dependency-injector==4.48.2
+dishka==1.7.2
 dnspython==2.8.0
 ecdsa==0.19.1
 email-validator==2.3.0

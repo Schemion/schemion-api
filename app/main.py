@@ -1,13 +1,13 @@
 from fastapi import FastAPI
+from dishka.integrations.fastapi import setup_dishka
 
-from app.container import ApplicationContainer
+from app.infrastructure.di.container import container
 from app.middleware.admin_guard import AdminGuardMiddleware
 from app.presentation.routers import tasks, datasets, users, models, auth, admin
 
-container = ApplicationContainer()
-container.config.override({})
-
 app = FastAPI(redirect_slashes=False)
+
+setup_dishka(container=container, app=app)
 
 app.add_middleware(AdminGuardMiddleware)
 

@@ -1,21 +1,22 @@
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
 
-from app.core.entities import Model
 from app.core.enums import ModelStatus
 from app.core.interfaces import IModelRepository
-from app.infrastructure.database import models
-from app.infrastructure.mappers import OrmEntityMapper
+from app.infrastructure.database.models import Model
 from app.presentation import schemas
-from app.core.entities.model import Model as EntityModel
 
 
 class ModelRepository(IModelRepository):
-    async def create_model(self, db: AsyncSession, model: schemas.ModelCreate, user_id: UUID, is_system: bool = False) -> Model | None:
-        db_model = models.Model(
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def create_model(self, model: schemas.ModelCreate, user_id: UUID,
+                           is_system: bool = False) -> Model | None:
+        db_model = Model(
             user_id=user_id if not is_system else None,
             is_system=is_system,
             name=model.name,
@@ -27,66 +28,59 @@ class ModelRepository(IModelRepository):
             status=model.status or ModelStatus.pending,
             base_model_id=model.base_model_id,
         )
-        db.add(db_model)
-        await db.commit()
-        await db.refresh(db_model)
-        return OrmEntityMapper.to_entity(db_model, EntityModel)
+        self.session.add(db_model)
+        await self.session.commit()
+        await self.session.refresh(db_model)
+        return db_model
 
-    async def get_model_by_id(self, db: AsyncSession, model_id: UUID, user_id: Optional[UUID] = None) -> Optional[EntityModel]:
-        query = select(models.Model).where(model_id == models.Model.id)
+    async def get_model_by_id(self, model_id: UUID, user_id: Optional[UUID] = None) -> Optional[Model]:
+        query = select(Model).where(model_id == Model.id)
 
         if user_id:
-            query = query.where(or_(models.Model.is_system == True,models.Model.user_id == user_id))
+            query = query.where(or_(Model.is_system == True, Model.user_id == user_id))
 
-        result = await db.execute(query)
+        result = await self.session.execute(query)
         db_model = result.scalar_one_or_none()
-        return OrmEntityMapper.to_entity(db_model, EntityModel) if db_model else None
+        return db_model
 
-    async def get_models(
-            self,
-            db: AsyncSession,
-            user_id: UUID,
-            skip: int = 0,
-            limit: int = 100,
-            status: Optional[ModelStatus] = None,
-            dataset_id: Optional[UUID] = None,
-            include_system: bool = True
-    ) -> list[Model | None]:
-        query = select(models.Model).where(
-            (models.Model.user_id == user_id) |
-            (models.Model.is_system.is_(True) if include_system else False)
+    async def get_models(self, user_id: UUID, skip: int = 0, limit: int = 100,
+                         status: Optional[ModelStatus] = None, dataset_id: Optional[UUID] = None,
+                         include_system: bool = True
+                         ) -> list[Model | None]:
+        query = select(Model).where(
+            (Model.user_id == user_id) |
+            (Model.is_system.is_(True) if include_system else False)
         )
         if status is not None:
-            query = query.where(status == models.Model.status)
+            query = query.where(status == Model.status)
         if dataset_id is not None:
-            query = query.where(dataset_id == models.Model.dataset_id)
+            query = query.where(dataset_id == Model.dataset_id)
 
-        query = query.order_by(models.Model.id)
+        query = query.order_by(Model.id)
         query = query.offset(skip).limit(limit)
 
-        result = await db.execute(query)
+        result = await self.session.execute(query)
         db_models = result.scalars().all()
-        return [OrmEntityMapper.to_entity(model, EntityModel) for model in db_models]
+        return [model for model in db_models]
 
-    async def get_models_by_dataset_id(self, db: AsyncSession, dataset_id: UUID, user_id: UUID) -> list[Model | None]:
-        query = (select(models.Model)
-            .where(dataset_id == models.Model.dataset_id,
-                    or_(
-                    models.Model.is_system == True,
-                    models.Model.user_id == user_id
-                ))
-        )
-        result = await db.execute(query)
+    async def get_models_by_dataset_id(self, dataset_id: UUID, user_id: UUID) -> list[Model]:
+        query = (select(Model)
+                 .where(dataset_id == Model.dataset_id,
+                        or_(
+                            Model.is_system == True,
+                            Model.user_id == user_id
+                        ))
+                 )
+        result = await self.session.execute(query)
         db_models = result.scalars().all()
-        return [OrmEntityMapper.to_entity(model, EntityModel) for model in db_models]
+        return [model for model in db_models]
 
-    async def delete_model_by_id(self, db: AsyncSession, model_id: UUID, user_id: UUID) -> None:
-        query = select(models.Model).where(model_id == models.Model.id, user_id == models.Model.user_id, models.Model.is_system.is_(False))
-        result = await db.execute(query)
+    async def delete_model_by_id(self, model_id: UUID, user_id: UUID) -> None:
+        query = select(Model).where(model_id == Model.id, user_id == Model.user_id, Model.is_system.is_(False))
+        result = await self.session.execute(query)
         db_model = result.scalar_one_or_none()
         if db_model:
-            await db.delete(db_model)
-            await db.commit()
+            await self.session.delete(db_model)
+            await self.session.commit()
         else:
-            raise PermissionError("Model not found or you don't have access")
-
+            raise PermissionError("Model not found")

@@ -1,13 +1,10 @@
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.core import entities
 from app.core.enums import CacheKeysObject
 from app.core.interfaces import ICacheRepository
-from app.presentation.schemas import UserCreate
 from app.core.interfaces.user_interface import IUserRepository
+from app.presentation.schemas import DatasetRead, ModelRead, UserCreate, UserRead
 
 
 class UserService:
@@ -19,26 +16,25 @@ class UserService:
         self.user_repo = user_repo
         self.cache_repo = cache_repo
 
-    async def create_user(self, session: AsyncSession, user: UserCreate) -> entities.User:
-        existing_user = await self.user_repo.get_user_by_email(session,str(user.email))
+    async def create_user(self, user: UserCreate) -> UserRead:
+        existing_user = await self.user_repo.get_user_by_email(str(user.email))
         if existing_user:
             raise ValueError("Email already registered")
 
-        created_user = await self.user_repo.create_user(session, user)
+        created_user = await self.user_repo.create_user(user)
 
-        await self.cache_repo.delete(CacheKeysObject.user(user_id = created_user.id))
+        await self.cache_repo.delete(CacheKeysObject.user(user_id=created_user.id))
 
         return created_user
 
-    async def get_user_by_email(self, session: AsyncSession, email: str) -> Optional[entities.User]:
-        return await self.user_repo.get_user_by_email(session, email)
+    async def get_user_by_email(self, email: str) -> Optional[UserRead]:
+        return await self.user_repo.get_user_by_email(email)
 
+    async def get_user_by_id(self, user_id: UUID) -> Optional[UserRead]:
+        return await self.user_repo.get_user_by_id(user_id)
 
-    async def get_user_by_id(self, session: AsyncSession, user_id: UUID) -> Optional[entities.User]:
-        return await self.user_repo.get_user_by_id(session, user_id)
+    async def get_user_datasets(self, user_id: UUID) -> List[DatasetRead]:
+        return await self.user_repo.get_user_datasets(user_id)
 
-    async def get_user_datasets(self, session: AsyncSession, user_id: UUID) -> List[entities.Dataset]:
-        return await self.user_repo.get_user_datasets(session, user_id)
-
-    async def get_user_models(self, session: AsyncSession, user_id: UUID) -> List[entities.Model]:
-        return await self.user_repo.get_user_models(session, user_id)
+    async def get_user_models(self, user_id: UUID) -> List[ModelRead]:
+        return await self.user_repo.get_user_models(user_id)
