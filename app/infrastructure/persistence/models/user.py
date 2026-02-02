@@ -1,10 +1,10 @@
 import uuid
 
-from sqlalchemy import func, UUID, Column, String, DateTime
+from sqlalchemy import Column, DateTime, String, UUID, func
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
 
-from app.infrastructure.database.models.base import Base
+from .base import Base
 
 
 class User(Base):

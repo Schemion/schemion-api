@@ -4,8 +4,9 @@ from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.interfaces import IDatasetRepository, IModelRepository, ITaskRepository, IUserRepository
-from app.database import AsyncSessionLocal
-from app.infrastructure.database.repositories import DatasetRepository, ModelRepository, TaskRepository, UserRepository
+from app.infrastructure.database import AsyncSessionLocal
+from app.infrastructure.persistence.repositories import DatasetRepository, ModelRepository, TaskRepository, \
+    UserRepository
 
 
 class SQLAlchemyProvider(Provider):

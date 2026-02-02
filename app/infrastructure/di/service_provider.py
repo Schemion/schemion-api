@@ -1,10 +1,9 @@
 from dishka import Provider, Scope, provide
 
-from app.config import settings
-from app.core.interfaces import ICacheRepository, IDatasetRepository, IModelRepository, IStorageRepository, \
-    ITaskRepository, IUserRepository
+from app.core.interfaces import IDatasetRepository, IModelRepository, ITaskRepository, IUserRepository
 from app.core.services import DatasetService, ModelService, TaskService, UserService
 from app.core.services.auth_service import AuthService
+from app.infrastructure.config import settings
 from app.infrastructure.services.cache import CacheService
 from app.infrastructure.services.cloud_storage import MinioStorage
 

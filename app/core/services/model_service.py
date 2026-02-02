@@ -1,13 +1,12 @@
-
 from typing import Optional
 from uuid import UUID
 
 from fastapi import HTTPException
 
-from app.config import settings
 from app.core.enums import CacheKeysList, CacheKeysObject, CacheTTL, ModelStatus
 from app.core.interfaces import ICacheRepository, IDatasetRepository, IModelRepository, IStorageRepository
 from app.core.validation import validate_model_file
+from app.infrastructure.config import settings
 from app.presentation.schemas import ModelCreate, ModelRead
 
 
@@ -20,7 +19,7 @@ class ModelService:
         self.cache_repo = cache_repo
 
     async def create_model(self, model: ModelCreate, file_data: bytes, filename: str,
-                           content_type: str,  user_id: UUID) -> ModelRead:
+                           content_type: str, user_id: UUID) -> ModelRead:
         await validate_model_file(file_data, filename)
 
         if model.dataset_id:
@@ -59,7 +58,7 @@ class ModelService:
                          include_system: bool = True) -> list[ModelRead]:
         cache_key = CacheKeysList.models(user_id=user_id, skip=skip, limit=limit,
                                          status=status.value if status else None, dataset_id=dataset_id)
-        cached =await self.cache_repo.get(cache_key)
+        cached = await self.cache_repo.get(cache_key)
         if cached:
             return [ModelRead(**item) for item in cached]
 

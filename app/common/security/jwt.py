@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
+
 import jwt
-from app.config import settings
+
+from app.infrastructure.config import settings
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, UUID
+from sqlalchemy import Column, String, UUID
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
 

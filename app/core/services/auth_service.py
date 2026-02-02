@@ -1,8 +1,7 @@
-from app.common.security import create_access_token, verify_password
+from app.common.security import create_access_token
 from app.common.security.hashing import get_password_hash_async, verify_password_async
 from app.core.interfaces import IUserRepository
 from app.presentation.schemas import LoginRequest, Token, UserCreate, UserRead
-
 
 
 class AuthService:
@@ -27,7 +26,6 @@ class AuthService:
 
         if not verify_password_async(login.password, user.hashed_password):
             raise ValueError("Invalid email or password")
-
 
         roles = [role.name for role in user.roles] if user.roles else []
 

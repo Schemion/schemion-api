@@ -3,11 +3,14 @@ import re
 import magic
 from fastapi import HTTPException
 
+# TODO: вынести их отсюда в val_config.json
+
 ALLOWED_EXTENSIONS = {'pt', 'pth'}
 MAX_FILENAME_LENGTH = 255
 FILENAME_REGEX = re.compile(r'^[a-zA-Z0-9_\-.\s]+$')
 ALLOWED_MIME_TYPES = {'application/octet-stream', 'application/x-pickle'}
 MAX_MODEL_FILE_SIZE = 1024 ** 3
+
 
 async def validate_model_file(file_data: bytes, filename: str):
     if not file_data:

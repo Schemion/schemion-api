@@ -1,19 +1,21 @@
 from uuid import UUID
 
 from fastapi import Request
-from jose import jwt, JWTError
+from jose import JWTError, jwt
 from sqlalchemy.sql.annotation import Annotated
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp
-from app.config import settings
+
 from app.core.enums import UserRole
 from app.core.services import UserService
 from app.dependencies import get_db_session
+from app.infrastructure.config import settings
 from app.presentation.routers.tasks import FromDishka
 
 
+# TODO: избавится от контекстного менеджера сессий по возможности
 # Нужно чтобы прятать от случайных юзеров сам факт наличия админ панели
 class AdminGuardMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp):

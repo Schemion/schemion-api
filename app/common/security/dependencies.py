@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 
-from app.config import settings
+from app.infrastructure.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
@@ -16,7 +16,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
         headers={"WWW-Authenticate": "Bearer"},
     )
     if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Not authorized")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized")
 
     try:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
@@ -39,10 +39,12 @@ def require_roles(allowed_roles: List[str]):
                 detail="Not enough rights"
             )
         return current_user
+
     return role_checker
 
+
 def require_permission(permission: str):
-    async def checker(current_user: dict = Depends(get_current_user),):
+    async def checker(current_user: dict = Depends(get_current_user), ):
         token_permissions = current_user.get("permissions", [])
         if not permission in token_permissions:
             raise HTTPException(
@@ -50,5 +52,5 @@ def require_permission(permission: str):
                 detail=f"Access denied"
             )
         return current_user
-    return checker
 
+    return checker

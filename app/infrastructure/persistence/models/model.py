@@ -1,10 +1,10 @@
 import uuid
 
-from sqlalchemy import Column, UUID, String, ForeignKey, func, DateTime, Enum, Boolean, ARRAY, Text
+from sqlalchemy import ARRAY, Boolean, Column, DateTime, Enum, ForeignKey, String, Text, UUID, func
 from sqlalchemy.orm import relationship
 
 from app.core.enums import ModelStatus
-from app.infrastructure.database.models.base import Base
+from .base import Base
 
 
 class Model(Base):
@@ -14,7 +14,7 @@ class Model(Base):
     name = Column(String(255), nullable=False)
     version = Column(String(50), nullable=False)
     architecture = Column(String(50), nullable=False)
-    architecture_profile = Column(String(512), nullable=False) # resnet или еще что-то
+    architecture_profile = Column(String(512), nullable=False)  # resnet или еще что-то
     classes = Column(ARRAY(Text), nullable=True)
     minio_model_path = Column(String(512), nullable=False)
     status = Column(Enum(ModelStatus, name="model_status"), nullable=False, default=ModelStatus.pending)

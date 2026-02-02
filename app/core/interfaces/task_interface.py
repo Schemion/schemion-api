@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from uuid import UUID
 
-from app.infrastructure.database.models import Task
+from app.infrastructure.persistence.models import Task
 from app.presentation import schemas
 
 

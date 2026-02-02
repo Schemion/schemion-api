@@ -2,12 +2,11 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.core.enums import CacheKeysList, CacheKeysObject, CacheTTL, QueueTypes, TaskStatus
 from app.core.interfaces import ICacheRepository, IDatasetRepository, IModelRepository, IStorageRepository, \
     ITaskRepository
+from app.infrastructure.config import settings
 from app.infrastructure.messaging import RabbitMQPublisher
 from app.presentation.schemas import TaskCreate, TaskRead
 
@@ -90,7 +89,7 @@ class TaskService:
         return task
 
     async def get_tasks(self, user_id: UUID, skip: int = 0, limit: int = 100) -> \
-    list[TaskRead]:
+            list[TaskRead]:
         cache_key = CacheKeysList.tasks(user_id=user_id)
         cached = await self.cache_repo.get(cache_key)
         if cached:

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums import ModelStatus
 from app.core.interfaces import IModelRepository
-from app.infrastructure.database.models import Model
+from app.infrastructure.persistence.models import Model
 from app.presentation import schemas
 
 

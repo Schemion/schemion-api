@@ -1,11 +1,13 @@
 import json
+
 import aio_pika
-from app.config import settings
+
+from app.infrastructure.config import settings
 
 
 class RabbitMQPublisher:
     def __init__(self):
-        self._connection =None
+        self._connection = None
         self.channel = None
 
     async def connect(self):

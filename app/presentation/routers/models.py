@@ -76,7 +76,5 @@ async def delete_model(service: Annotated[ModelService, FromDishka()], model_id:
                        current_user: dict = Depends(get_current_user)):
     try:
         await service.delete_model_by_id(model_id, UUID(current_user.get("id")))
-    except PermissionError as e:
+    except Exception as e:
         raise HTTPException(403, str(e))
-    except ValueError as e:
-        raise HTTPException(404, str(e))

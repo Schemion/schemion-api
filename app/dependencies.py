@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
-from app.database import AsyncSessionLocal
 
+from app.infrastructure.database import AsyncSessionLocal
+
+
+# TODO: По возможности избавиться от это файла в целом
 
 async def get_db():
     async with AsyncSessionLocal() as db:
@@ -8,6 +11,7 @@ async def get_db():
             yield db
         finally:
             await db.close()
+
 
 @asynccontextmanager
 async def get_db_session():

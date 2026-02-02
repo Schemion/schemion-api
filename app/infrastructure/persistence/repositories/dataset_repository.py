@@ -1,12 +1,11 @@
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from typing import Optional
-
 from app.core.interfaces import IDatasetRepository
-from app.infrastructure.database.models import Dataset
+from app.infrastructure.persistence.models import Dataset
 from app.presentation import schemas
 
 
@@ -16,7 +15,7 @@ class DatasetRepository(IDatasetRepository):
 
     async def create_dataset(self, dataset: schemas.DatasetCreate, user_id: UUID) -> Dataset | None:
         db_dataset = Dataset(
-            user_id = user_id,
+            user_id=user_id,
             name=dataset.name,
             minio_path=dataset.minio_path,
             description=dataset.description,
@@ -38,7 +37,7 @@ class DatasetRepository(IDatasetRepository):
         return db_dataset
 
     async def get_datasets(self, user_id: UUID, skip: int = 0, limit: int = 100, name_contains: Optional[str] = None) -> \
-    list[Dataset | None]:
+            list[Dataset | None]:
         query = select(Dataset).where((Dataset.user_id == user_id) | (Dataset.user_id.is_(None)))
 
         if name_contains:

@@ -1,11 +1,11 @@
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
 
 from app.core.interfaces import ITaskRepository
-from app.infrastructure.database.models import Task
+from app.infrastructure.persistence.models import Task
 from app.presentation import schemas
 
 
@@ -50,11 +50,11 @@ class TaskRepository(ITaskRepository):
         return db_task if db_task else None
 
     async def get_tasks(
-        self,
-        skip: int = 0,
-        limit: int = 100,
-        user_id: Optional[UUID] = None,
-        model_id: Optional[UUID] = None,
+            self,
+            skip: int = 0,
+            limit: int = 100,
+            user_id: Optional[UUID] = None,
+            model_id: Optional[UUID] = None,
     ) -> list[Task | None]:
 
         query = select(Task)

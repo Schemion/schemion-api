@@ -1,5 +1,5 @@
 from dishka import FromDishka
-from jose import jwt, JWTError
+from jose import JWTError, jwt
 from sqladmin.authentication import AuthenticationBackend
 from sqlalchemy.sql.annotation import Annotated
 from starlette.requests import Request
@@ -8,8 +8,8 @@ from starlette.responses import Response
 from app.common.security import create_access_token
 from app.common.security.hashing import verify_password_async
 from app.core.services import UserService
-from app.config import settings
 from app.dependencies import get_db_session
+from app.infrastructure.config import settings
 
 
 class AdminAuth(AuthenticationBackend):
@@ -61,7 +61,6 @@ class AdminAuth(AuthenticationBackend):
 
             async with get_db_session() as session:
                 user = await user_service.get_user_by_id(user_id)
-
 
                 if not user:
                     return False

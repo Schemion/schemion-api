@@ -1,9 +1,9 @@
 import uuid
 
-from sqlalchemy import UUID, Column, ForeignKey, String, Text, DateTime, func
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text, UUID, func
 from sqlalchemy.orm import relationship
 
-from app.infrastructure.database.models.base import Base
+from .base import Base
 
 
 class Task(Base):

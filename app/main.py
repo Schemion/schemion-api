@@ -1,9 +1,9 @@
-from fastapi import FastAPI
 from dishka.integrations.fastapi import setup_dishka
+from fastapi import FastAPI
 
 from app.infrastructure.di.container import container
 from app.middleware.admin_guard import AdminGuardMiddleware
-from app.presentation.routers import tasks, datasets, users, models, auth, admin
+from app.presentation.routers import admin, auth, datasets, models, tasks, users
 
 app = FastAPI(redirect_slashes=False)
 

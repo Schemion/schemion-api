@@ -1,12 +1,15 @@
+import io
+import uuid
 from datetime import timedelta
 
 from miniopy_async import Minio
+
 from app.core.interfaces.storage_interface import IStorageRepository
-import uuid
-import io
+
 
 class MinioStorage(IStorageRepository):
-    def __init__(self, endpoint: str, access_key: str, secret_key: str, bucket: str | None = None, secure: bool = False):
+    def __init__(self, endpoint: str, access_key: str, secret_key: str, bucket: str | None = None,
+                 secure: bool = False):
         self.client = Minio(endpoint, access_key=access_key, secret_key=secret_key, secure=secure)
         self.endpoint = endpoint
         self.public_endpoint = "files.localhost"
@@ -32,7 +35,7 @@ class MinioStorage(IStorageRepository):
     async def delete_file(self, object_name: str, bucket: str) -> None:
         await self.client.remove_object(bucket, object_name)
 
-    #TODO: Работать не будет, так как бакет не публичный
+    # TODO: Работать не будет, так как бакет не публичный
     def get_file_url(self, object_name: str, bucket: str) -> str:
         return f"http://{self.public_endpoint}/{bucket}/{object_name}"
 
@@ -42,4 +45,3 @@ class MinioStorage(IStorageRepository):
             object_name=object_name,
             expires=timedelta(seconds=expires)
         )
-
