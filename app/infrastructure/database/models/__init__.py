@@ -3,3 +3,7 @@ from .task import Task
 from .model import Model
 from .user import User
 from .dataset import Dataset
+from .role import Role
+from .user_role import UserRole
+from .role_permission import RolePermission
+from .permission import Permission

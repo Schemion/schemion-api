@@ -1,6 +1,5 @@
 import json
 from typing import Any, Optional, Union
-from redis import RedisError
 from redis.asyncio import Redis
 from app.core.interfaces import ICacheRepository
 

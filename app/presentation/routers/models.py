@@ -1,34 +1,24 @@
-from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from typing import Annotated, Optional
 from uuid import UUID
-from typing import Optional
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from dishka import FromDishka
+from dishka.integrations.fastapi import DishkaRoute
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from app.common.security.dependencies import get_current_user
-from app.container import ApplicationContainer
+from app.core.enums import ModelArchitectures, ModelStatus
 from app.core.services import ModelService
-from app.dependencies import get_db
 from app.presentation.schemas import ModelCreate, ModelRead
-from app.core.enums import ModelStatus, ModelArchitectures
-from app.core.entities import User as UserEntity
 
-router = APIRouter(prefix="/models", tags=["models"])
+router = APIRouter(prefix="/models", tags=["models"], route_class=DishkaRoute)
+
 
 # TODO: надо удалить обязательный профиль для архитектуры или хотя бы сделать его по енуму а не просто строкой
 @router.post("/create", response_model=ModelRead, status_code=201)
-@inject
-async def create_model(
-    name: str = Form(...),
-    version: str = Form(...),
-    architecture: ModelArchitectures = Form(...),
-    architecture_profile: str = Form(...),
-    dataset_id: Optional[UUID] = Form(None),
-    file: UploadFile = File(...),
-    current_user: UserEntity = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-    service: ModelService = Depends(Provide[ApplicationContainer.model_service]),
-):
+async def create_model(service: Annotated[ModelService, FromDishka()], name: str = Form(...), version: str = Form(...),
+                       architecture: ModelArchitectures = Form(...), architecture_profile: str = Form(...),
+                       dataset_id: Optional[UUID] = Form(None), file: UploadFile = File(...),
+                       current_user: dict = Depends(get_current_user)):
     model_create = ModelCreate(
         name=name,
         version=version,
@@ -45,8 +35,7 @@ async def create_model(
             file_data=file_data,
             filename=file.filename,
             content_type=file.content_type or "application/octet-stream",
-            current_user=current_user,
-            session=db
+            user_id=UUID(current_user.get("id")),
         )
         return ModelRead.model_validate(created)
     except ValueError as e:
@@ -58,54 +47,35 @@ async def create_model(
 
 
 @router.get("/", response_model=list[ModelRead])
-@inject
-async def get_models(
-        skip: int = 0,
-        limit: int = 100,
-        status: Optional[ModelStatus] = None,
-        dataset_id: Optional[UUID] = None,
-        include_system: bool = True,
-        current_user: UserEntity = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db),
-        service: ModelService = Depends(Provide[ApplicationContainer.model_service]),
-):
+async def get_models(service: Annotated[ModelService, FromDishka()], skip: int = 0, limit: int = 100,
+                     status: Optional[ModelStatus] = None, dataset_id: Optional[UUID] = None,
+                     include_system: bool = True, current_user: dict = Depends(get_current_user)):
     models = await service.get_models(
-        current_user=current_user,
+        user_id=UUID(current_user.get("id")),
         skip=skip,
         limit=limit,
         status=status,
         dataset_id=dataset_id,
         include_system=include_system,
-        session=db
     )
 
     return [ModelRead.model_validate(model) for model in models]
 
 
 @router.get("/{model_id}", response_model=ModelRead)
-@inject
-async def get_model(
-        model_id: UUID,
-        current_user: UserEntity = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db),
-        service: ModelService = Depends(Provide[ApplicationContainer.model_service]),
-):
-    model = await service.get_model_by_id(db, model_id, current_user)
+async def get_model(service: Annotated[ModelService, FromDishka()], model_id: UUID,
+                    current_user: dict = Depends(get_current_user)):
+    model = await service.get_model_by_id(model_id, UUID(current_user.get("id")))
     if not model:
         raise HTTPException(status_code=404, detail="Model not found or access denied")
     return ModelRead.model_validate(model)
 
 
 @router.delete("/{model_id}", status_code=204)
-@inject
-async def delete_model(
-        model_id: UUID,
-        current_user: UserEntity = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db),
-        service: ModelService = Depends(Provide[ApplicationContainer.model_service]),
-):
+async def delete_model(service: Annotated[ModelService, FromDishka()], model_id: UUID,
+                       current_user: dict = Depends(get_current_user)):
     try:
-        await service.delete_model_by_id(db, model_id, current_user)
+        await service.delete_model_by_id(model_id, UUID(current_user.get("id")))
     except PermissionError as e:
         raise HTTPException(403, str(e))
     except ValueError as e:
