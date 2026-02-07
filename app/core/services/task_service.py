@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import HTTPException
 
 from app.core.enums import CacheKeysList, CacheKeysObject, CacheTTL, QueueTypes, TaskStatus
+from app.core.exceptions import NotFoundError, ValidationError
 from app.core.interfaces import ICacheRepository, IDatasetRepository, IModelRepository, IStorageRepository, \
     ITaskRepository
 from app.infrastructure.config import settings
@@ -26,11 +26,11 @@ class TaskService:
         if task.model_id:
             await self._ensure_model_exists(task.model_id)
         else:
-            raise HTTPException(status_code=400, detail=f"Model with id {task.model_id} does not exist.")
+            raise NotFoundError(f"Model ID does not exist: {task.model_id}.")
 
         allowed_types = ["image/jpeg", "image/png", "application/pdf"]
         if content_type not in allowed_types:
-            raise HTTPException(status_code=400, detail=f"Unsupported file type: {content_type}.")
+            raise ValidationError(f"Unsupported file type: {content_type}. Allowed: {allowed_types}")
 
         filepath = f"{str(user_id)}/{filename}"
 
@@ -80,10 +80,10 @@ class TaskService:
 
         task = await self.task_repo.get_task_by_id(task_id)
         if not task:
-            raise HTTPException(404, f"Task {task_id} does not exist")
+            raise NotFoundError(f"Task with id {task_id} does not exist")
 
         if task.user_id != user_id:
-            raise HTTPException(403, "Access denied")
+            raise PermissionError("Access denied")
         await self.cache_repo.set(cache_key, TaskRead.model_validate(task).model_dump(), expire=CacheTTL.TASKS.value)
 
         return task
@@ -104,10 +104,10 @@ class TaskService:
     async def delete_task_by_id(self, task_id: UUID, user_id: UUID) -> None:
         task = await self.task_repo.get_task_by_id(task_id)
         if not task:
-            raise HTTPException(404, f"Task {task_id} does not exist")
+            raise NotFoundError(f"Task with id {task_id} does not exist")
 
         if task.user_id != user_id:
-            raise HTTPException(403, "Access denied")
+            raise PermissionError("Access denied")
 
         await self.task_repo.delete_task_by_id(task_id)
         cache_key = CacheKeysObject.task(task_id=task_id)
@@ -115,11 +115,11 @@ class TaskService:
 
     async def _ensure_model_exists(self, model_id: UUID):
         if not await self.model_repo.get_model_by_id(model_id):
-            raise HTTPException(status_code=400, detail=f"Model with id={model_id} does not exist")
+            raise NotFoundError(f"Model with id {model_id} does not exist")
 
     async def _ensure_dataset_exists(self, dataset_id: UUID):
         if not await self.dataset_repo.get_dataset_by_id(dataset_id):
-            raise HTTPException(status_code=400, detail=f"Dataset with id={dataset_id} does not exist")
+            raise NotFoundError(f"Dataset with id {dataset_id} does not exist")
 
     async def _publish(self, queue: QueueTypes, message: dict):
         await self.publisher.publish(queue, message)

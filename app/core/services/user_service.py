@@ -2,6 +2,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from app.core.enums import CacheKeysObject
+from app.core.exceptions import ValidationError
 from app.core.interfaces import ICacheRepository
 from app.core.interfaces.user_interface import IUserRepository
 from app.presentation.schemas import DatasetRead, ModelRead, UserCreate, UserRead
@@ -19,7 +20,7 @@ class UserService:
     async def create_user(self, user: UserCreate) -> UserRead:
         existing_user = await self.user_repo.get_user_by_email(str(user.email))
         if existing_user:
-            raise ValueError("Email already registered")
+            raise ValidationError("Email already registered")
 
         created_user = await self.user_repo.create_user(user)
 

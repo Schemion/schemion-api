@@ -1,9 +1,8 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi import HTTPException
-
 from app.core.enums import CacheKeysList, CacheKeysObject, CacheTTL
+from app.core.exceptions import NotFoundError
 from app.core.interfaces import ICacheRepository, IDatasetRepository, IStorageRepository
 from app.core.validation import validate_dataset_archive
 from app.infrastructure.config import settings
@@ -47,7 +46,7 @@ class DatasetService:
         return dataset
 
     async def get_datasets(self, user_id: UUID, skip: int = 0, limit: int = 100, name_contains: Optional[str] = None) -> \
-    list[DatasetRead]:
+            list[DatasetRead]:
         cache_key = CacheKeysList.datasets(user_id=user_id, skip=skip, limit=limit, name_contains=name_contains)
         cached = await self.cache_repo.get(cache_key)
         if cached:
@@ -75,6 +74,6 @@ class DatasetService:
     async def _ensure_dataset_exists(self, dataset_id: UUID, user_id: UUID):
         dataset = await self.dataset_repo.get_dataset_by_id(dataset_id, user_id)
         if not dataset:
-            raise HTTPException(status_code=400, detail=f"Dataset with id={dataset_id} does not exist or access denied")
+            raise NotFoundError(f"Dataset with id {dataset_id} does not exist or access denied")
 
         return dataset

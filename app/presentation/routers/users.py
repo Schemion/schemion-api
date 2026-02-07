@@ -13,6 +13,7 @@ router = APIRouter(prefix="/users", tags=["users"], route_class=DishkaRoute)
 
 # TODO: Закрыть ручку и дать доступ только админам
 # я вообще уже не помню зачем я делал этот роутер, наверно его тоже надо удалять
+# его даже менять не стал, пока не понимаю чо с ним делать
 @router.get("/{user_id}", response_model=UserRead)
 async def get_user(user_id: UUID, service: Annotated[UserService, FromDishka()]):
     user = await service.get_user_by_id(user_id=user_id)

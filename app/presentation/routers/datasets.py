@@ -1,9 +1,10 @@
 from typing import Annotated, Optional
 from uuid import UUID
 
+from alembic.util import status
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
 from app.common.security.dependencies import get_current_user
 from app.core.services import DatasetService
@@ -12,7 +13,7 @@ from app.presentation.schemas import DatasetCreate, DatasetRead
 router = APIRouter(prefix="/datasets", tags=["datasets"], route_class=DishkaRoute)
 
 
-@router.post("/create", response_model=DatasetRead, status_code=201)
+@router.post("/create", response_model=DatasetRead, status_code=status.HTTP_201_CREATED)
 async def create_dataset(service: Annotated[DatasetService, FromDishka()], name: str = Form(...),
                          description: Optional[str] = Form(None), num_samples: Optional[int] = Form(None),
                          file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
@@ -32,10 +33,8 @@ async def create_dataset(service: Annotated[DatasetService, FromDishka()], name:
         )
         file.file.close()
         return DatasetRead.model_validate(created)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process dataset: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to process dataset: {str(e)}")
     finally:
         await file.close()
 
@@ -53,15 +52,10 @@ async def get_datasets(service: Annotated[DatasetService, FromDishka()], skip: i
 async def get_dataset(service: Annotated[DatasetService, FromDishka()], dataset_id: UUID,
                       current_user: dict = Depends(get_current_user)):
     dataset = await service.get_dataset_by_id(dataset_id, UUID(current_user.get("id")))
-    if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset not found or access denied")
     return DatasetRead.model_validate(dataset)
 
 
-@router.delete("/{dataset_id}", status_code=204)
+@router.delete("/{dataset_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_dataset(service: Annotated[DatasetService, FromDishka()], dataset_id: UUID,
                          current_user: dict = Depends(get_current_user)):
-    try:
-        await service.delete_dataset_by_id(dataset_id, UUID(current_user.get("id")))
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+    await service.delete_dataset_by_id(dataset_id, UUID(current_user.get("id")))

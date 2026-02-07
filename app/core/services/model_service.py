@@ -1,9 +1,8 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi import HTTPException
-
 from app.core.enums import CacheKeysList, CacheKeysObject, CacheTTL, ModelStatus
+from app.core.exceptions import NotFoundError
 from app.core.interfaces import ICacheRepository, IDatasetRepository, IModelRepository, IStorageRepository
 from app.core.validation import validate_model_file
 from app.infrastructure.config import settings
@@ -47,7 +46,7 @@ class ModelService:
         model = await self._ensure_model_exists(model_id, user_id)
 
         if model.user_id != user_id:
-            raise HTTPException(403, "Access denied")
+            raise PermissionError("Access denied")
 
         await self.cache_repo.set(cache_key, ModelRead.model_validate(model).model_dump(), expire=CacheTTL.MODELS.value)
 
@@ -73,10 +72,10 @@ class ModelService:
         model = await self._ensure_model_exists(model_id, user_id)
 
         if model.is_system:
-            raise HTTPException(403, "Cannot delete system model")
+            raise PermissionError("Cannot delete system model")
 
         if model.user_id != user_id:
-            raise HTTPException(403, "Access denied")
+            raise PermissionError("Access denied")
 
         await self.storage.delete_file(model.minio_model_path, settings.MINIO_MODELS_BUCKET)
         await self.model_repo.delete_model_by_id(model_id, user_id)
@@ -86,10 +85,10 @@ class ModelService:
     async def _ensure_dataset_exists(self, dataset_id: UUID, user_id: UUID):
         dataset = await self.dataset_repo.get_dataset_by_id(dataset_id, user_id)
         if not dataset:
-            raise HTTPException(status_code=400, detail=f"Dataset with id={dataset_id} does not exist or access denied")
+            raise NotFoundError(f"Dataset with id {dataset_id} does not exist or access denied")
 
     async def _ensure_model_exists(self, model_id: UUID, user_id: UUID):
         model = await self.model_repo.get_model_by_id(model_id, user_id)
         if not model:
-            raise HTTPException(status_code=404, detail=f"Model with id={model_id} not found or access denied")
+            raise NotFoundError(f"Model with id {model_id} not found or access denied")
         return model

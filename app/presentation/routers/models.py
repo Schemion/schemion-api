@@ -3,7 +3,8 @@ from uuid import UUID
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
+from starlette import status
 
 from app.common.security.dependencies import get_current_user
 from app.core.enums import ModelArchitectures, ModelStatus
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/models", tags=["models"], route_class=DishkaRoute)
 
 
 # TODO: надо удалить обязательный профиль для архитектуры или хотя бы сделать его по енуму а не просто строкой
-@router.post("/create", response_model=ModelRead, status_code=201)
+@router.post("/create", response_model=ModelRead, status_code=status.HTTP_201_CREATED)
 async def create_model(service: Annotated[ModelService, FromDishka()], name: str = Form(...), version: str = Form(...),
                        architecture: ModelArchitectures = Form(...), architecture_profile: str = Form(...),
                        dataset_id: Optional[UUID] = Form(None), file: UploadFile = File(...),
@@ -38,23 +39,19 @@ async def create_model(service: Annotated[ModelService, FromDishka()], name: str
             user_id=UUID(current_user.get("id")),
         )
         return ModelRead.model_validate(created)
-    except ValueError as e:
-        raise HTTPException(400, str(e))
-    except PermissionError as e:
-        raise HTTPException(403, str(e))
     finally:
         await file.close()
 
 
 @router.get("/", response_model=list[ModelRead])
 async def get_models(service: Annotated[ModelService, FromDishka()], skip: int = 0, limit: int = 100,
-                     status: Optional[ModelStatus] = None, dataset_id: Optional[UUID] = None,
+                     model_status: Optional[ModelStatus] = None, dataset_id: Optional[UUID] = None,
                      include_system: bool = True, current_user: dict = Depends(get_current_user)):
     models = await service.get_models(
         user_id=UUID(current_user.get("id")),
         skip=skip,
         limit=limit,
-        status=status,
+        status=model_status,
         dataset_id=dataset_id,
         include_system=include_system,
     )
@@ -66,15 +63,11 @@ async def get_models(service: Annotated[ModelService, FromDishka()], skip: int =
 async def get_model(service: Annotated[ModelService, FromDishka()], model_id: UUID,
                     current_user: dict = Depends(get_current_user)):
     model = await service.get_model_by_id(model_id, UUID(current_user.get("id")))
-    if not model:
-        raise HTTPException(status_code=404, detail="Model not found or access denied")
     return ModelRead.model_validate(model)
 
 
-@router.delete("/{model_id}", status_code=204)
+@router.delete("/{model_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_model(service: Annotated[ModelService, FromDishka()], model_id: UUID,
                        current_user: dict = Depends(get_current_user)):
-    try:
-        await service.delete_model_by_id(model_id, UUID(current_user.get("id")))
-    except Exception as e:
-        raise HTTPException(403, str(e))
+    await service.delete_model_by_id(model_id, UUID(current_user.get("id")))
+
