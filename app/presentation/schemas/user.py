@@ -2,12 +2,12 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
-from app.core.enums import UserRole
+from app.core.enums import UserRoles
 
 
 class UserBase(BaseModel):
     email: EmailStr
-    role: UserRole = UserRole.user
+    role: UserRoles = UserRoles.user
 
 
 class UserCreate(UserBase):

@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 
-class UserRole(str, Enum):
+class UserRoles(str, Enum):
     admin = "admin"
     user = "user"
 

@@ -6,9 +6,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.enums import UserRole
+from app.core.enums import UserRoles
 from app.core.interfaces.user_interface import IUserRepository
-from app.infrastructure.persistence.models import Dataset, Model, Role, User
+from app.infrastructure.persistence.models import Dataset, Model, Role, User, UserRole
 from app.presentation import schemas
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -32,7 +32,7 @@ class UserRepository(IUserRepository):
             hashed_password=hashed_password,
         )
         result = await self.session.execute(
-            select(Role).where(Role.name == UserRole.user.value)
+            select(Role).where(Role.name == UserRoles.user.value)
         )
         default_role = result.scalar_one()
         db_user.user_roles.append(UserRole(role=default_role))
