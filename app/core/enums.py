@@ -8,14 +8,13 @@ class UserRoles(str, Enum):
     user = "user"
 
 
-class ModelStatus(str, Enum):
-    pending = "pending"
-    training = "training"
-    completed = "completed"
+class TaskStatus(str, Enum):
+    queued = "queued"
+    running = "running"
+    succeeded = "succeeded"
     failed = "failed"
 
-
-class TaskStatus(str, Enum):
+class TaskType(str, Enum):
     inference = "inference"
     training = "training"
 
@@ -72,11 +71,10 @@ class CacheKeysList(str, Enum):
         return f"{CacheKeysList.DATASETS}:{user_id}:{skip}:{limit}:{name_contains_val}"
 
     @staticmethod
-    def models(user_id: UUID, skip: int = 0, limit: int = 100, status: Optional[str] = None,
+    def models(user_id: UUID, skip: int = 0, limit: int = 100,
                dataset_id: Optional[UUID] = None) -> str:
-        s_val = status if status else "any"
         d_val = str(dataset_id) if dataset_id else "all"
-        return f"{CacheKeysList.MODELS}:{user_id}:{skip}:{limit}:{s_val}:{d_val}"
+        return f"{CacheKeysList.MODELS}:{user_id}:{skip}:{limit}:{d_val}"
 
     @staticmethod
     def tasks(user_id: UUID):

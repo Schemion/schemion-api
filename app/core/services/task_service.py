@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 
-from app.core.enums import CacheKeysList, CacheKeysObject, CacheTTL, QueueTypes, TaskStatus
+from app.core.enums import CacheKeysList, CacheKeysObject, CacheTTL, QueueTypes, TaskType
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.interfaces import ICacheRepository, IDatasetRepository, IModelRepository, IStorageRepository, \
     ITaskRepository
@@ -42,7 +42,7 @@ class TaskService:
 
         message = {
             "task_id":    str(created.id),
-            "task_type":  TaskStatus.inference,
+            "task_type":  TaskType.inference,
             "model_id":   str(task.model_id),
             "model_arch": model.architecture if hasattr(model, "architecture") else None,
             "input_path": input_object_path,
@@ -61,7 +61,7 @@ class TaskService:
 
         message = {
             "task_id":    str(created.id),
-            "task_type":  TaskStatus.training,
+            "task_type":  TaskType.training,
             "model_id":   str(task.model_id),
             "dataset_id": str(task.dataset_id),
             "timestamp":  datetime.now(timezone.utc).isoformat()

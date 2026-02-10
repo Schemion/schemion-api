@@ -1,10 +1,9 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums import ModelStatus
 from app.core.interfaces import IModelRepository
 from app.infrastructure.persistence.models import Model
 from app.presentation import schemas
@@ -20,12 +19,10 @@ class ModelRepository(IModelRepository):
             user_id=user_id if not is_system else None,
             is_system=is_system,
             name=model.name,
-            version=model.version,
             architecture=model.architecture,
             architecture_profile=model.architecture_profile,
             dataset_id=model.dataset_id,
             minio_model_path=model.minio_model_path,
-            status=model.status or ModelStatus.pending,
             base_model_id=model.base_model_id,
         )
         self.session.add(db_model)
@@ -44,15 +41,13 @@ class ModelRepository(IModelRepository):
         return db_model
 
     async def get_models(self, user_id: UUID, skip: int = 0, limit: int = 100,
-                         status: Optional[ModelStatus] = None, dataset_id: Optional[UUID] = None,
+                         dataset_id: Optional[UUID] = None,
                          include_system: bool = True
-                         ) -> list[Model | None]:
+                         ) -> List[Optional[Model]]:
         query = select(Model).where(
             (Model.user_id == user_id) |
             (Model.is_system.is_(True) if include_system else False)
         )
-        if status is not None:
-            query = query.where(status == Model.status)
         if dataset_id is not None:
             query = query.where(dataset_id == Model.dataset_id)
 

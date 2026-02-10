@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from app.infrastructure.persistence.models import Dataset
@@ -17,7 +17,7 @@ class IDatasetRepository(ABC):
 
     @abstractmethod
     async def get_datasets(self, user_id: UUID, skip: int = 0, limit: int = 100, name_contains: Optional[str] = None) -> \
-    list[Dataset]:
+    List[Optional[Dataset]]:
         ...
 
     @abstractmethod

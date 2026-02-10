@@ -15,12 +15,11 @@ router = APIRouter(prefix="/datasets", tags=["datasets"], route_class=DishkaRout
 
 @router.post("/create", response_model=DatasetRead, status_code=status.HTTP_201_CREATED)
 async def create_dataset(service: Annotated[DatasetService, FromDishka()], name: str = Form(...),
-                         description: Optional[str] = Form(None), num_samples: Optional[int] = Form(None),
+                         description: Optional[str] = Form(None),
                          file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     dataset_create = DatasetCreate(
         name=name,
         description=description,
-        num_samples=num_samples or 0
     )
     try:
         file_data = await file.read()

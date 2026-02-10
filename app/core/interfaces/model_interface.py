@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
-from app.core.enums import ModelStatus
 from app.infrastructure.persistence.models import Model
 from app.presentation import schemas
 
@@ -18,9 +17,8 @@ class IModelRepository(ABC):
 
     @abstractmethod
     async def get_models(self, user_id: UUID, include_system: bool, skip: int = 0, limit: int = 100,
-                         status: Optional[ModelStatus] = None,
                          dataset_id: Optional[UUID] = None
-                         ) -> list[Model]:
+                         ) -> List[Optional[Model]]:
         ...
 
     @abstractmethod

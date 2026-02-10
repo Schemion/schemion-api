@@ -2,7 +2,7 @@ from typing import Annotated
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 
 from app.core.services.auth_service import AuthService
 from app.presentation import schemas

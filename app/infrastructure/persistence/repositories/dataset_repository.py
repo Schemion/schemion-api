@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import select
@@ -19,7 +19,6 @@ class DatasetRepository(IDatasetRepository):
             name=dataset.name,
             minio_path=dataset.minio_path,
             description=dataset.description,
-            num_samples=dataset.num_samples or 0,
         )
         self.session.add(db_dataset)
         await self.session.commit()
@@ -37,7 +36,7 @@ class DatasetRepository(IDatasetRepository):
         return db_dataset
 
     async def get_datasets(self, user_id: UUID, skip: int = 0, limit: int = 100, name_contains: Optional[str] = None) -> \
-            list[Dataset | None]:
+            List[Optional[Dataset]]:
         query = select(Dataset).where((Dataset.user_id == user_id) | (Dataset.user_id.is_(None)))
 
         if name_contains:

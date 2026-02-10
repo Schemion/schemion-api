@@ -6,7 +6,7 @@ from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile,status
 
 from app.common.security.dependencies import get_current_user
-from app.core.enums import TaskStatus
+from app.core.enums import TaskType
 from app.core.services import TaskService
 from app.presentation.schemas import TaskCreate, TaskRead
 
@@ -19,7 +19,7 @@ async def create_inference_task(service: Annotated[TaskService, FromDishka()],
                                 file: UploadFile = File(...)):
     task_create = TaskCreate(
         user_id=UUID(current_user.get("id")),
-        task_type=TaskStatus.inference,
+        task_type=TaskType.inference,
         model_id=model_id,
     )
 
@@ -43,7 +43,7 @@ async def create_training_task(service: Annotated[TaskService, FromDishka()],
                                dataset_id: UUID = Form(...)):
     task_create = TaskCreate(
         user_id=UUID(current_user.get("id")),
-        task_type=TaskStatus.training,
+        task_type=TaskType.training,
         model_id=model_id,
         dataset_id=dataset_id,
     )

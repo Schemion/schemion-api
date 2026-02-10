@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from starlette import status
 
 from app.common.security.dependencies import get_current_user
-from app.core.enums import ModelArchitectures, ModelStatus
+from app.core.enums import ModelArchitectures
 from app.core.services import ModelService
 from app.presentation.schemas import ModelCreate, ModelRead
 
@@ -16,17 +16,15 @@ router = APIRouter(prefix="/models", tags=["models"], route_class=DishkaRoute)
 
 # TODO: надо удалить обязательный профиль для архитектуры или хотя бы сделать его по енуму а не просто строкой
 @router.post("/create", response_model=ModelRead, status_code=status.HTTP_201_CREATED)
-async def create_model(service: Annotated[ModelService, FromDishka()], name: str = Form(...), version: str = Form(...),
+async def create_model(service: Annotated[ModelService, FromDishka()], name: str = Form(...),
                        architecture: ModelArchitectures = Form(...), architecture_profile: str = Form(...),
                        dataset_id: Optional[UUID] = Form(None), file: UploadFile = File(...),
                        current_user: dict = Depends(get_current_user)):
     model_create = ModelCreate(
         name=name,
-        version=version,
         architecture=architecture.value,
         architecture_profile=architecture_profile,
         dataset_id=dataset_id,
-        status=ModelStatus.pending
     )
 
     try:
@@ -44,14 +42,12 @@ async def create_model(service: Annotated[ModelService, FromDishka()], name: str
 
 
 @router.get("/", response_model=list[ModelRead])
-async def get_models(service: Annotated[ModelService, FromDishka()], skip: int = 0, limit: int = 100,
-                     model_status: Optional[ModelStatus] = None, dataset_id: Optional[UUID] = None,
+async def get_models(service: Annotated[ModelService, FromDishka()], skip: int = 0, limit: int = 100, dataset_id: Optional[UUID] = None,
                      include_system: bool = True, current_user: dict = Depends(get_current_user)):
     models = await service.get_models(
         user_id=UUID(current_user.get("id")),
         skip=skip,
         limit=limit,
-        status=model_status,
         dataset_id=dataset_id,
         include_system=include_system,
     )

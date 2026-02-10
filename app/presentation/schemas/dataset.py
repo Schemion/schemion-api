@@ -8,7 +8,6 @@ class DatasetBase(BaseModel):
     name: str
     minio_path: Optional[str] = None  # тоже остается опциональным так как потом добавляется в сервисе
     description: Optional[str] = None
-    num_samples: int = 0
 
 
 class DatasetCreate(DatasetBase):
