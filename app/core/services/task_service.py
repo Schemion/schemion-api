@@ -6,8 +6,8 @@ from app.core.enums import CacheKeysList, CacheKeysObject, CacheTTL, QueueTypes,
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.interfaces import ICacheRepository, IDatasetRepository, IModelRepository, IStorageRepository, \
     ITaskRepository
+from app.infrastructure.celery_app import celery_app
 from app.infrastructure.config import settings
-from app.infrastructure.messaging import RabbitMQPublisher
 from app.presentation.schemas import TaskCreate, TaskRead
 
 
@@ -18,7 +18,6 @@ class TaskService:
         self.storage = storage
         self.model_repo = model_repo
         self.dataset_repo = dataset_repo
-        self.publisher = RabbitMQPublisher()
         self.cache_repo = cache_repo
 
     async def create_inference_task(self, task: TaskCreate, file_data: bytes, filename: str,
@@ -121,5 +120,10 @@ class TaskService:
         if not await self.dataset_repo.get_dataset_by_id(dataset_id):
             raise NotFoundError(f"Dataset with id {dataset_id} does not exist")
 
-    async def _publish(self, queue: QueueTypes, message: dict):
-        await self.publisher.publish(queue, message)
+    @staticmethod
+    async def _publish(queue: QueueTypes, message: dict):
+        celery_app.send_task(
+            "process_inference_task",
+            args=[message],
+            queue=queue
+        )

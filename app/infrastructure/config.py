@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     REDIS_URL: str = "redis://:adminpass@redis:6379/0"
+    REDIS_BROKER_URL: str = "redis://:adminpass@redis:6379/1"
     DATABASE_URL: str = "postgresql+asyncpg://admin:admin@database:5432/schemion"
     RABBITMQ_URL: str = "amqp://admin:admin@rabbitmq:5672/"
     JWT_SECRET: str = "supersecret"
