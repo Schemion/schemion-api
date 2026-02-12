@@ -48,7 +48,7 @@ class TaskService:
             "timestamp":  datetime.now(timezone.utc).isoformat()
         }
 
-        await self._publish(QueueTypes.inference_queue, message)
+        await self._publish_inference(QueueTypes.inference_queue, message)
         await self.cache_repo.delete(CacheKeysObject.task(task_id=created.id))
         await self.cache_repo.delete(CacheKeysList.tasks(user_id=user_id))
         return created
@@ -66,7 +66,7 @@ class TaskService:
             "timestamp":  datetime.now(timezone.utc).isoformat()
         }
 
-        await self._publish(QueueTypes.training_queue, message)
+        await self._publish_training(QueueTypes.training_queue, message)
         cache_key = CacheKeysObject.task(task_id=created.id)
         await self.cache_repo.delete(cache_key)
         return created
@@ -120,10 +120,19 @@ class TaskService:
         if not await self.dataset_repo.get_dataset_by_id(dataset_id):
             raise NotFoundError(f"Dataset with id {dataset_id} does not exist")
 
+
     @staticmethod
-    async def _publish(queue: QueueTypes, message: dict):
+    async def _publish_inference(queue: QueueTypes, message: dict):
         celery_app.send_task(
-            "process_inference_task",
+            "app.infrastructure.tasks.inference.process_inference_task",
+            args=[message],
+            queue=queue
+        )
+
+    @staticmethod
+    async def _publish_training(queue: QueueTypes, message: dict):
+        celery_app.send_task(
+            "app.infrastructure.tasks.training.process_training_task",
             args=[message],
             queue=queue
         )
