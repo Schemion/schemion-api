@@ -13,6 +13,20 @@ services:
       - .:/app
     command:
       [ "/wait-for-it.sh", "database:5432", "--", "sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4" ]
+
+  worker:
+    build: .
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+      - redis
+    volumes:
+      - .:/app
+    command:
+      ["celery", "-A", "app.infrastructure.celery_app.celery_app", "worker", "--loglevel=info"]
+
   database:
     image: postgres:16
     restart: always
