@@ -6,7 +6,6 @@ services:
       - .env
     depends_on:
       - database
-      - rabbitmq
     ports:
       - "8000:8000"
     volumes:
@@ -20,7 +19,6 @@ services:
     env_file:
       - .env
     depends_on:
-      - rabbitmq
       - redis
     volumes:
       - .:/app
@@ -63,20 +61,8 @@ services:
     volumes:
       - cache:/data
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    restart: always
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+
 volumes:
   postgres_data:
   minio_data:
-  rabbitmq_data:
   cache:
