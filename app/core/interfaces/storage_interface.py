@@ -11,5 +11,5 @@ class IStorageRepository(ABC):
         ...
 
     @abstractmethod
-    async def get_file_url(self, object_name: str, bucket: str) -> str:
+    async def get_presigned_file_url(self, object_name: str, bucket: str, expires: int = 3600) -> str:
         ...

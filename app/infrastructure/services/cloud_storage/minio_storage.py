@@ -11,8 +11,15 @@ class MinioStorage(IStorageRepository):
     def __init__(self, endpoint: str, access_key: str, secret_key: str, bucket: str | None = None,
                  secure: bool = False):
         self.client = Minio(endpoint, access_key=access_key, secret_key=secret_key, secure=secure)
-        self.endpoint = endpoint
-        self.public_endpoint = "files.localhost"
+        self.internal_endpoint = endpoint
+        self.public_endpoint = "localhost:9000"
+        self.signer_client = Minio(
+            self.public_endpoint,
+            access_key=access_key,
+            secret_key=secret_key,
+            secure=secure,
+            region="us-east-1" # возможно костыль, другого решения в целом я не нашел пока что
+        )
         self.bucket = bucket
 
     async def _ensure_bucket_exists(self, bucket: str) -> None:
@@ -35,13 +42,12 @@ class MinioStorage(IStorageRepository):
     async def delete_file(self, object_name: str, bucket: str) -> None:
         await self.client.remove_object(bucket, object_name)
 
-    # TODO: Работать не будет, так как бакет не публичный
-    def get_file_url(self, object_name: str, bucket: str) -> str:
-        return f"http://{self.public_endpoint}/{bucket}/{object_name}"
 
-    async def get_presigned_url(self, object_name: str, bucket: str, expires: int = 3600) -> str:
-        return await self.client.presigned_get_object(
+    async def get_presigned_file_url(self, object_name: str, bucket: str, expires: int = 3600) -> str:
+        url = await self.signer_client.presigned_get_object(
             bucket_name=bucket,
             object_name=object_name,
             expires=timedelta(seconds=expires)
         )
+
+        return url

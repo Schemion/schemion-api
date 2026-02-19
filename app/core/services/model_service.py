@@ -81,6 +81,14 @@ class ModelService:
         await self.cache_repo.delete(CacheKeysObject.model(model_id=model_id))
         await self.cache_repo.delete_pattern(f"{CacheKeysList.TASKS}:{user_id}")
 
+    async def download_model(self, model_id: UUID, user_id: UUID) -> str:
+        model = await self._ensure_model_exists(model_id, user_id)
+        if model.user_id != user_id:
+            raise PermissionError("Access denied")
+        if model.is_system:
+            raise PermissionError("Cannot download system model")
+        return await self.storage.get_presigned_file_url(model.minio_model_path, settings.MINIO_MODELS_BUCKET)
+
     async def _ensure_dataset_exists(self, dataset_id: UUID, user_id: UUID):
         dataset = await self.dataset_repo.get_dataset_by_id(dataset_id, user_id)
         if not dataset:

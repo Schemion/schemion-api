@@ -67,3 +67,7 @@ async def delete_model(service: Annotated[ModelService, FromDishka()], model_id:
                        current_user: dict = Depends(get_current_user)):
     await service.delete_model_by_id(model_id, UUID(current_user.get("id")))
 
+@router.get("/download/{model_id}", response_model=dict)
+async def download_model(service: Annotated[ModelService, FromDishka()], model_id: UUID,current_user: dict = Depends(get_current_user)):
+    url = await service.download_model(model_id, UUID(current_user.get("id")))
+    return {"download_url": url}

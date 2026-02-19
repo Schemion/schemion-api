@@ -40,6 +40,10 @@ class DatasetService:
             return DatasetRead(**cached)
 
         dataset = await self._ensure_dataset_exists(dataset_id, user_id)
+
+        if dataset.user_id != user_id:
+            raise PermissionError("Access denied")
+
         await self.cache_repo.set(cache_key, DatasetRead.model_validate(dataset).model_dump(),
                                   expire=CacheTTL.DATASETS.value)
 
@@ -64,12 +68,21 @@ class DatasetService:
     async def delete_dataset_by_id(self, dataset_id: UUID, user_id: UUID) -> None:
         dataset = await self._ensure_dataset_exists(dataset_id, user_id)
 
+        if dataset.user_id != user_id:
+            raise PermissionError("Access denied")
+
         await self.storage.delete_file(dataset.minio_path, settings.MINIO_DATASETS_BUCKET)
 
         await self.dataset_repo.delete_dataset_by_id(dataset_id)
 
         await self.cache_repo.delete(CacheKeysObject.dataset(dataset_id=dataset_id))
         await self.cache_repo.delete_pattern(f"{CacheKeysList.DATASETS}:{user_id}:*")
+
+    async def download_dataset(self, dataset_id: UUID, user_id: UUID) -> str:
+        dataset = await self._ensure_dataset_exists(dataset_id, user_id)
+        if dataset.user_id != user_id:
+            raise PermissionError("Access denied")
+        return await self.storage.get_presigned_file_url(dataset.minio_path, settings.MINIO_DATASETS_BUCKET)
 
     async def _ensure_dataset_exists(self, dataset_id: UUID, user_id: UUID):
         dataset = await self.dataset_repo.get_dataset_by_id(dataset_id, user_id)

@@ -53,6 +53,10 @@ async def get_dataset(service: Annotated[DatasetService, FromDishka()], dataset_
     dataset = await service.get_dataset_by_id(dataset_id, UUID(current_user.get("id")))
     return DatasetRead.model_validate(dataset)
 
+@router.get("/download/{dataset_id}", response_model=dict)
+async def download_dataset(service: Annotated[DatasetService, FromDishka()], dataset_id: UUID,current_user: dict = Depends(get_current_user)):
+    url = await service.download_dataset(dataset_id, UUID(current_user.get("id")))
+    return {"download_url": url}
 
 @router.delete("/{dataset_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_dataset(service: Annotated[DatasetService, FromDishka()], dataset_id: UUID,
