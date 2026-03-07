@@ -5,6 +5,7 @@ from alembic.util import status
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+import asyncio
 
 from app.common.security.dependencies import get_current_user
 from app.core.services import DatasetService
@@ -22,7 +23,7 @@ async def create_dataset(service: Annotated[DatasetService, FromDishka()], name:
         description=description,
     )
     try:
-        file_data = await file.read()
+        file_data = await asyncio.wait_for(file.read(), timeout=10)
         created = await service.create_dataset(
             dataset=dataset_create,
             file_data=file_data,
@@ -30,12 +31,11 @@ async def create_dataset(service: Annotated[DatasetService, FromDishka()], name:
             content_type=file.content_type or "application/octet-stream",
             user_id=UUID(current_user.get("id"))
         )
-        file.file.close()
-        return DatasetRead.model_validate(created)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to process dataset: {str(e)}")
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT, detail="File read operation timed out")
     finally:
         await file.close()
+    return DatasetRead.model_validate(created)
 
 
 @router.get("/", response_model=list[DatasetRead])

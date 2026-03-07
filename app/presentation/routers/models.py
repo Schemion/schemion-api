@@ -3,8 +3,9 @@ from uuid import UUID
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from starlette import status
+import asyncio
 
 from app.common.security.dependencies import get_current_user
 from app.core.enums import ModelArchitectures
@@ -26,9 +27,8 @@ async def create_model(service: Annotated[ModelService, FromDishka()], name: str
         architecture_profile=architecture_profile,
         dataset_id=dataset_id,
     )
-
     try:
-        file_data = await file.read()
+        file_data = await asyncio.wait_for(file.read(), timeout=10)
         created = await service.create_model(
             model=model_create,
             file_data=file_data,
@@ -36,9 +36,11 @@ async def create_model(service: Annotated[ModelService, FromDishka()], name: str
             content_type=file.content_type or "application/octet-stream",
             user_id=UUID(current_user.get("id")),
         )
-        return ModelRead.model_validate(created)
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT, detail="File read operation timed out")
     finally:
         await file.close()
+    return ModelRead.model_validate(created)
 
 
 @router.get("/", response_model=list[ModelRead])
