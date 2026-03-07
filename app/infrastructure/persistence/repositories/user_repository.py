@@ -11,8 +11,6 @@ from app.core.interfaces.user_interface import IUserRepository
 from app.infrastructure.persistence.models import Dataset, Model, Role, User, UserRole
 from app.presentation import schemas
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 class UserRepository(IUserRepository):
     def __init__(self, session: AsyncSession):
@@ -26,10 +24,9 @@ class UserRepository(IUserRepository):
         return db_user if db_user else None
 
     async def create_user(self, user: schemas.UserCreate) -> User | None:
-        hashed_password = pwd_context.hash(user.password)
         db_user = User(
             email=user.email,
-            hashed_password=hashed_password,
+            hashed_password=user.password,
         )
         result = await self.session.execute(
             select(Role).where(Role.name == UserRoles.user.value)

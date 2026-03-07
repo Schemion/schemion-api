@@ -2,7 +2,7 @@ from typing import Annotated
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
 from app.core.services.auth_service import AuthService
 from app.presentation import schemas
@@ -16,6 +16,6 @@ async def login(login_schema: LoginRequest, service: Annotated[AuthService, From
     return await service.login(login_schema)
 
 
-@router.post("/register", response_model=schemas.UserRead)
+@router.post("/register", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
 async def create_user(user: schemas.UserCreate, service: Annotated[AuthService, FromDishka()]):
     return await service.register(user)

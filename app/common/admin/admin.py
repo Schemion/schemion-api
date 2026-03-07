@@ -1,4 +1,6 @@
-from dishka import FromDishka
+from urllib import request
+
+from dishka import AsyncContainer
 from jose import JWTError, jwt
 from sqladmin.authentication import AuthenticationBackend
 from sqlalchemy.sql.annotation import Annotated
@@ -8,7 +10,6 @@ from starlette.responses import Response
 from app.common.security import create_access_token
 from app.common.security.hashing import verify_password_async
 from app.core.services import UserService
-from app.dependencies import get_db_session
 from app.infrastructure.config import settings
 
 
@@ -18,14 +19,14 @@ class AdminAuth(AuthenticationBackend):
 
     async def login(
             self,
-            request: Request,
-            user_service: UserService = Annotated[UserService, FromDishka()],
+            request: Request
     ) -> bool:
         form = await request.form()
         # В sqladmin ожидается username, но так как у нас его нет, то будет email но подпись останется username
         email, password = form["username"], form["password"]
-
-        async with get_db_session() as session:
+        container = request.app.state.dishka_container
+        async with container() as con:
+            user_service = await con.get(UserService)
             user = await user_service.get_user_by_email(email)
 
             if not user:
@@ -33,7 +34,7 @@ class AdminAuth(AuthenticationBackend):
             if not await verify_password_async(password, user.hashed_password):
                 return False
 
-            token = create_access_token({"sub": str(user.id), "role": user.role})
+            token = create_access_token({"sub": str(user.id), "role": user.roles})
 
             request.session.update({"token": token})
 
@@ -46,7 +47,6 @@ class AdminAuth(AuthenticationBackend):
     async def authenticate(
             self,
             request: Request,
-            user_service: UserService = Annotated[UserService, FromDishka()],
     ) -> Response | bool:
         token = request.session.get("token")
         if not token:
@@ -58,8 +58,9 @@ class AdminAuth(AuthenticationBackend):
             user_role = payload.get("role")
             if not user_id or not user_role:
                 return False
-
-            async with get_db_session() as session:
+            container = request.app.state.dishka_container
+            async with container() as con:
+                user_service = await con.get(UserService)
                 user = await user_service.get_user_by_id(user_id)
 
                 if not user:
