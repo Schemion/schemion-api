@@ -23,5 +23,6 @@ class TaskCreate(TaskBase):
 class TaskRead(TaskBase):
     id: uuid.UUID
     user_id: uuid.UUID
+    output_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

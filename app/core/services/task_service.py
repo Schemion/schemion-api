@@ -83,9 +83,10 @@ class TaskService:
 
         if task.user_id != user_id:
             raise PermissionError("Access denied")
-        await self.cache_repo.set(cache_key, TaskRead.model_validate(task).model_dump(), expire=CacheTTL.TASKS.value)
+        task_read = await self._attach_output_url(task)
+        await self.cache_repo.set(cache_key, task_read.model_dump(), expire=CacheTTL.TASKS.value)
 
-        return task
+        return task_read
 
     async def get_tasks(self, user_id: UUID, skip: int = 0, limit: int = 100) -> \
             list[TaskRead]:
@@ -95,10 +96,14 @@ class TaskService:
             return [TaskRead(**item) for item in cached]
         tasks = await self.task_repo.get_tasks(skip, limit, user_id=user_id)
 
-        serialized = [TaskRead.model_validate(task).model_dump() for task in tasks]
+        task_reads: list[TaskRead] = []
+        for task in tasks:
+            task_reads.append(await self._attach_output_url(task))
+
+        serialized = [task_read.model_dump() for task_read in task_reads]
 
         await self.cache_repo.set(cache_key, serialized, expire=CacheTTL.TASKS.value)
-        return tasks
+        return task_reads
 
     async def delete_task_by_id(self, task_id: UUID, user_id: UUID) -> None:
         task = await self.task_repo.get_task_by_id(task_id)
@@ -119,6 +124,17 @@ class TaskService:
     async def _ensure_dataset_exists(self, dataset_id: UUID):
         if not await self.dataset_repo.get_dataset_by_id(dataset_id):
             raise NotFoundError(f"Dataset with id {dataset_id} does not exist")
+
+
+    async def _attach_output_url(self, task) -> TaskRead:
+        task_read = TaskRead.model_validate(task)
+        if task.output_path:
+            task_read.output_url = await self.storage.get_presigned_file_url(
+                task.output_path,
+                settings.MINIO_SCHEMAS_BUCKET,
+                expires=CacheTTL.TASKS.value
+            )
+        return task_read
 
 
     @staticmethod
