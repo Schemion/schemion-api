@@ -5,7 +5,18 @@ from app.core.exceptions import NotFoundError, UnauthorizedError, ValidationErro
 from app.infrastructure.di.container import container
 from app.middleware.admin_guard import AdminGuardMiddleware
 from app.presentation.routers import admin, auth, datasets, models, tasks
-app = FastAPI(redirect_slashes=False)
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(redirect_slashes=True)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.exception_handler(NotFoundError)
 async def not_found_error_handler(_, exc: NotFoundError):

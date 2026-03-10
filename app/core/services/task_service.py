@@ -131,7 +131,7 @@ class TaskService:
         if task.output_path:
             task_read.output_url = await self.storage.get_presigned_file_url(
                 task.output_path,
-                settings.MINIO_SCHEMAS_BUCKET,
+                settings.MINIO_INFERENCES_BUCKET,
                 expires=CacheTTL.TASKS.value
             )
         return task_read
