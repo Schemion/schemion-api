@@ -39,7 +39,7 @@ async def create_inference_task(service: Annotated[TaskService, FromDishka()],
     return TaskRead.model_validate(created)
 
 @router.post("/create/training", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
-async def create_training_task(service: Annotated[TaskService, FromDishka()], model_id: UUID, dataset_id: UUID,
+async def create_training_task(service: Annotated[TaskService, FromDishka()], model_id: UUID = Form(...), dataset_id: UUID = Form(...),
                                 current_user: dict = Depends(get_current_user)):
     task_create = TaskCreate(
         user_id=UUID(current_user.get("id")),
