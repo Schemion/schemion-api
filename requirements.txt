@@ -17,6 +17,7 @@ bidict==0.23.1
 billiard==4.2.2
 blinker==1.9.0
 brotli==1.2.0
+celery==5.5.3
 certifi==2025.10.5
 cffi==2.0.0
 charset-normalizer==3.4.4
@@ -55,8 +56,6 @@ MarkupSafe==3.0.3
 miniopy-async==1.23.4
 msgpack==1.1.2
 multidict==6.7.0
-nanodb==0.4.3
-nanodb_driver==0.0.3
 packaging==25.0
 pamqp==3.3.0
 passlib==1.7.4
@@ -83,7 +82,7 @@ python-jose==3.5.0
 python-magic==0.4.27
 python-multipart==0.0.20
 python-socketio==5.15.0
-PyYAML==3.11
+PyYAML==6.0.3
 pyzmq==27.1.0
 redis==7.1.0
 requests==2.32.4
@@ -109,5 +108,3 @@ WTForms==3.1.2
 yarl==1.22.0
 zope.event==6.1
 zope.interface==8.1.1
-
-celery
