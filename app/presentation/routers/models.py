@@ -3,7 +3,7 @@ from uuid import UUID
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from starlette import status
 import asyncio
 
@@ -11,13 +11,16 @@ from app.common.security.dependencies import get_current_user
 from app.core.enums import ModelArchitectures
 from app.core.services import ModelService
 from app.presentation.schemas import ModelCreate, ModelRead
+from app.infrastructure.rate_limiter import limiter
 
 router = APIRouter(prefix="/models", tags=["models"], route_class=DishkaRoute)
 
 
 # TODO: надо удалить обязательный профиль для архитектуры или хотя бы сделать его по енуму а не просто строкой
+# TODO: закрыть для дефолтных юзеров, оставить только для админов
 @router.post("/create", response_model=ModelRead, status_code=status.HTTP_201_CREATED)
-async def create_model(service: Annotated[ModelService, FromDishka()], name: str = Form(...),
+@limiter.limit("5/minute")
+async def create_model(request: Request, service: Annotated[ModelService, FromDishka()], name: str = Form(...),
                        architecture: ModelArchitectures = Form(...), architecture_profile: str = Form(...),
                        dataset_id: Optional[UUID] = Form(None), file: UploadFile = File(...),
                        current_user: dict = Depends(get_current_user)):

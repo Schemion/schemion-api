@@ -8,7 +8,10 @@ from app.presentation.routers import admin, auth, datasets, models, tasks
 
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.infrastructure.rate_limiter import init_rate_limiter
+
 app = FastAPI(redirect_slashes=True)
+init_rate_limiter(app)
 
 app.add_middleware(
     CORSMiddleware,

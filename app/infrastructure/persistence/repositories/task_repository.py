@@ -63,6 +63,8 @@ class TaskRepository(ITaskRepository):
             query = query.where(user_id == Task.user_id)
         if model_id:
             query = query.where(model_id == Task.model_id)
+            
+        query = query.offset(skip).limit(limit)
 
         result = await self.session.execute(query)
         db_tasks = result.scalars().all()

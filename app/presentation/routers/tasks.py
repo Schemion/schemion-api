@@ -3,19 +3,21 @@ from uuid import UUID
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile,status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile,status
 import asyncio
 
 from app.common.security.dependencies import get_current_user
 from app.core.enums import TaskType
 from app.core.services import TaskService
 from app.presentation.schemas import TaskCreate, TaskRead
+from app.infrastructure.rate_limiter import limiter
 
 router = APIRouter(prefix="/tasks", tags=["tasks"], route_class=DishkaRoute)
 
 
 @router.post("/create/inference", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
-async def create_inference_task(service: Annotated[TaskService, FromDishka()],
+@limiter.limit("10/minute")
+async def create_inference_task(request: Request, service: Annotated[TaskService, FromDishka()],
                                 current_user: dict = Depends(get_current_user), model_id: UUID = Form(...),
                                 file: UploadFile = File(...)):
     task_create = TaskCreate(
@@ -39,7 +41,8 @@ async def create_inference_task(service: Annotated[TaskService, FromDishka()],
     return TaskRead.model_validate(created)
 
 @router.post("/create/training", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
-async def create_training_task(service: Annotated[TaskService, FromDishka()], model_id: UUID = Form(...), dataset_id: UUID = Form(...),
+@limiter.limit("2/hour")
+async def create_training_task(request: Request, service: Annotated[TaskService, FromDishka()], model_id: UUID = Form(...), dataset_id: UUID = Form(...),
                                 current_user: dict = Depends(get_current_user)):
     task_create = TaskCreate(
         user_id=UUID(current_user.get("id")),
