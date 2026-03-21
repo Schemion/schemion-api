@@ -4,6 +4,7 @@ from uuid import UUID
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile,status
+from fastapi.sse import EventSourceResponse
 import asyncio
 
 from app.common.security.dependencies import get_current_user
@@ -63,6 +64,18 @@ async def get_tasks(service: Annotated[TaskService, FromDishka()], skip: int = 0
 
     return [TaskRead.model_validate(task) for task in tasks]
 
+@router.get("/subscribe/{task_id}", response_model=EventSourceResponse)
+async def subscribe_to_task_updates(service: Annotated[TaskService, FromDishka()], task_id: UUID,
+                                    current_user: dict = Depends(get_current_user)):
+    user_id = UUID(current_user.get("id"))
+    async def event_generator():
+        while True:
+            task = await service.get_task_by_id(task_id=task_id, user_id=user_id)
+            yield TaskRead.model_validate(task)
+            if task.status in ("succeeded", "failed"):
+                    break
+            await asyncio.sleep(1)
+    return EventSourceResponse(event_generator())
 
 @router.get("/{task_id}", response_model=TaskRead)
 async def get_task(service: Annotated[TaskService, FromDishka()], task_id: UUID,
