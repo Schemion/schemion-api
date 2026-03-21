@@ -64,14 +64,15 @@ async def get_tasks(service: Annotated[TaskService, FromDishka()], skip: int = 0
 
     return [TaskRead.model_validate(task) for task in tasks]
 
-@router.get("/subscribe/{task_id}", response_model=EventSourceResponse)
+@router.get("/subscribe/{task_id}", response_class=EventSourceResponse, response_model=None)
 async def subscribe_to_task_updates(service: Annotated[TaskService, FromDishka()], task_id: UUID,
                                     current_user: dict = Depends(get_current_user)):
     user_id = UUID(current_user.get("id"))
     async def event_generator():
         while True:
             task = await service.get_task_by_id(task_id=task_id, user_id=user_id)
-            yield TaskRead.model_validate(task)
+            # SSE expects text or dict with "data"/"event"
+            yield {"event": "task_update", "data": TaskRead.model_validate(task).model_dump()}
             if task.status in ("succeeded", "failed"):
                     break
             await asyncio.sleep(1)
