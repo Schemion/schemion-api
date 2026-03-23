@@ -68,7 +68,10 @@ def test_login_invalid_password_raises(monkeypatch):
     )
     user_repo = SimpleNamespace(get_user_by_email=AsyncMock(return_value=user))
 
-    monkeypatch.setattr("app.core.services.auth_service.verify_password_async", lambda *_: False)
+    async def _verify(*_):
+        return False
+
+    monkeypatch.setattr("app.core.services.auth_service.verify_password_async", _verify)
 
     service = AuthService(user_repo)
     with pytest.raises(UnauthorizedError):
@@ -85,7 +88,10 @@ def test_login_success_returns_token(monkeypatch):
     )
     user_repo = SimpleNamespace(get_user_by_email=AsyncMock(return_value=user))
 
-    monkeypatch.setattr("app.core.services.auth_service.verify_password_async", lambda *_: True)
+    async def _verify(*_):
+        return True
+
+    monkeypatch.setattr("app.core.services.auth_service.verify_password_async", _verify)
     monkeypatch.setattr("app.core.services.auth_service.create_access_token", lambda *_: "token")
 
     service = AuthService(user_repo)
