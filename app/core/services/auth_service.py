@@ -25,7 +25,7 @@ class AuthService:
         if not user:
             raise UnauthorizedError("Invalid email or password")
 
-        if not verify_password_async(login.password, user.hashed_password):
+        if not await verify_password_async(login.password, user.hashed_password):
             raise UnauthorizedError("Invalid email or password")
 
         roles = [role.name for role in user.roles] if user.roles else []
