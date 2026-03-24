@@ -47,3 +47,10 @@ class ServiceProvider(Provider):
                           cache_repository: CacheService, storage_repository: MinioStorage) -> ModelService:
         return ModelService(model_repo=model_repository, cache_repo=cache_repository, storage=storage_repository,
                             dataset_repo=dataset_repository)
+
+    @provide(scope=Scope.APP)
+    def bobber_publisher(self) -> BobberPublisher:
+        return BobberPublisher(
+            host=settings.BOBBER_HOST or "localhost",
+            port=settings.BOBBER_PORT or 50051
+        )

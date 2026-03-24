@@ -6,19 +6,19 @@ from app.core.enums import CacheKeysList, CacheKeysObject, CacheTTL, QueueTypes,
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.interfaces import ICacheRepository, IDatasetRepository, IModelRepository, IStorageRepository, \
     ITaskRepository
-from app.infrastructure.celery_app import celery_app
 from app.infrastructure.config import settings
 from app.presentation.schemas import TaskCreate, TaskRead
 
 
 class TaskService:
     def __init__(self, task_repo: ITaskRepository, storage: IStorageRepository, model_repo: IModelRepository,
-                 dataset_repo: IDatasetRepository, cache_repo: ICacheRepository):
+                 dataset_repo: IDatasetRepository, cache_repo: ICacheRepository, bobber_publisher: BobberPublisher):
         self.task_repo = task_repo
         self.storage = storage
         self.model_repo = model_repo
         self.dataset_repo = dataset_repo
         self.cache_repo = cache_repo
+        self.bobber = bobber_publisher
 
     async def create_inference_task(self, task: TaskCreate, file_data: bytes, filename: str,
                                     content_type: str, user_id: UUID) -> TaskRead:
@@ -139,16 +139,12 @@ class TaskService:
 
     @staticmethod
     async def _publish_inference(queue: QueueTypes, message: dict):
-        celery_app.send_task(
-            "app.infrastructure.tasks.inference.process_inference_task",
-            args=[message],
-            queue=queue
-        )
+        success = self.bobber.publish_inference(queue, message)
+        if not success:
+            raise Exception(f"Publishing inference failed")
 
     @staticmethod
     async def _publish_training(queue: QueueTypes, message: dict):
-        celery_app.send_task(
-            "app.infrastructure.tasks.training.process_training_task",
-            args=[message],
-            queue=queue
-        )
+        success = self.bobber.publish_training(queue, message)
+        if not success:
+            raise Exception(f"Publishing training failed")

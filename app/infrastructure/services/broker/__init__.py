@@ -1,0 +1,1 @@
+from .bobber_publisher import BobberPublisher
