@@ -1,9 +1,10 @@
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 RUN apt-get update && apt-get install -y \
     build-essential \
     libmagic1 \
     libpq-dev \
+    git \
     && rm -rf /var/lib/apt/lists/* 
 
 WORKDIR /app
@@ -16,10 +17,7 @@ RUN chmod +x /wait-for-it.sh
 COPY requirements.txt .
 
 
-RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ \
-    --trusted-host pypi.tuna.tsinghua.edu.cn \
-    --timeout 120 \
-    --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 

@@ -6,6 +6,7 @@ from app.core.services.auth_service import AuthService
 from app.infrastructure.config import settings
 from app.infrastructure.services.cache import CacheService
 from app.infrastructure.services.cloud_storage import MinioStorage
+from app.infrastructure.services.broker import BobberPublisher
 
 
 class ServiceProvider(Provider):
@@ -33,9 +34,10 @@ class ServiceProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def get_task_service(self, task_repository: ITaskRepository, model_repository: IModelRepository,
                          dataset_repository: IDatasetRepository, storage_repository: MinioStorage,
-                         cache_repository: CacheService) -> TaskService:
+                         cache_repository: CacheService, bobber_publisher: BobberPublisher) -> TaskService:
         return TaskService(task_repo=task_repository, storage=storage_repository, model_repo=model_repository,
-                           dataset_repo=dataset_repository, cache_repo=cache_repository)
+                           dataset_repo=dataset_repository, cache_repo=cache_repository,
+                           bobber_publisher=bobber_publisher)
 
     @provide(scope=Scope.REQUEST)
     def get_dataset_service(self, dataset_repository: IDatasetRepository, cache_repository: CacheService,

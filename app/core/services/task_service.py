@@ -8,6 +8,7 @@ from app.core.interfaces import ICacheRepository, IDatasetRepository, IModelRepo
     ITaskRepository
 from app.infrastructure.config import settings
 from app.presentation.schemas import TaskCreate, TaskRead
+from app.infrastructure.services.broker import BobberPublisher
 
 
 class TaskService:
@@ -137,14 +138,12 @@ class TaskService:
         return task_read
 
 
-    @staticmethod
-    async def _publish_inference(queue: QueueTypes, message: dict):
+    async def _publish_inference(self, queue: QueueTypes, message: dict):
         success = self.bobber.publish_inference(queue, message)
         if not success:
             raise Exception(f"Publishing inference failed")
 
-    @staticmethod
-    async def _publish_training(queue: QueueTypes, message: dict):
+    async def _publish_training(self, queue: QueueTypes, message: dict):
         success = self.bobber.publish_training(queue, message)
         if not success:
             raise Exception(f"Publishing training failed")

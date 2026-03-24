@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     MINIO_MODELS_BUCKET: str = "models"
     MINIO_DATASETS_BUCKET: str = "datasets"
     MINIO_INFERENCES_BUCKET: str = "inference-results"
-    BOBBER_HOST: str = "broker"
+    BOBBER_HOST: str = "bob-the-broker"
+    BOBBER_PORT: int = 50051
 
     model_config = SettingsConfigDict(
         env_file='.env',
