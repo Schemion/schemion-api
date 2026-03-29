@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     MINIO_SCHEMAS_BUCKET: str = "schemas-images"
     MINIO_MODELS_BUCKET: str = "models"
     MINIO_DATASETS_BUCKET: str = "datasets"
+    MINIO_METRICS_BUCKET: str = "metrics"
     MINIO_INFERENCES_BUCKET: str = "inference-results"
     BOBBER_HOST: str = "bob-the-broker"
     BOBBER_PORT: int = 50051

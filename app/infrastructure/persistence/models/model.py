@@ -15,6 +15,7 @@ class Model(Base):
     architecture_profile = Column(String(512), nullable=False)  # resnet или еще что-то
     classes = Column(ARRAY(Text), nullable=True)
     minio_model_path = Column(String(512), nullable=False)
+    metrics_path = Column(String(512), nullable=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     is_system = Column(Boolean, default=False, nullable=False)
     base_model_id = Column(UUID(as_uuid=True), ForeignKey("models.id"), nullable=True)
