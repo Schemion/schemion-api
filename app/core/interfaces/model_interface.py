@@ -26,5 +26,9 @@ class IModelRepository(ABC):
         ...
 
     @abstractmethod
+    async def get_model_metrics(self, model_id: UUID, user_id: UUID) -> str:
+        ...
+
+    @abstractmethod
     async def delete_model_by_id(self, model_id: UUID, user_id: UUID) -> None:
         ...

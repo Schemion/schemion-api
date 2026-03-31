@@ -66,6 +66,11 @@ async def get_model(service: Annotated[ModelService, FromDishka()], model_id: UU
     model = await service.get_model_by_id(model_id, UUID(current_user.get("id")))
     return ModelRead.model_validate(model)
 
+@router.get("/metrics/{model_id}", response_model=None)
+async def get_model_metrics(service: Annotated[ModelService, FromDishka()], model_id: UUID,
+                            current_user: dict = Depends(get_current_user)):
+    metrics = await service.get_model_metrics(model_id, UUID(current_user.get("id")))
+    return {"metrics_url": metrics}
 
 @router.delete("/{model_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_model(service: Annotated[ModelService, FromDishka()], model_id: UUID,

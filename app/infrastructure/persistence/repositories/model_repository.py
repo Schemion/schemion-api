@@ -69,6 +69,15 @@ class ModelRepository(IModelRepository):
         result = await self.session.execute(query)
         db_models = result.scalars().all()
         return [model for model in db_models]
+    
+    async def get_model_metrics(self, model_id: UUID, user_id: UUID) -> str:
+        query = select(Model).where(model_id == Model.id, user_id == Model.user_id)
+        result = await self.session.execute(query)
+        db_model = result.scalar_one_or_none()
+        if db_model:
+            return db_model.metrics_path
+        else:
+            raise PermissionError("Model not found")
 
     async def delete_model_by_id(self, model_id: UUID, user_id: UUID) -> None:
         query = select(Model).where(model_id == Model.id, user_id == Model.user_id, Model.is_system.is_(False))

@@ -81,6 +81,20 @@ class ModelService:
         await self.cache_repo.delete(CacheKeysObject.model(model_id=model_id))
         await self.cache_repo.delete_pattern(f"{CacheKeysList.TASKS}:{user_id}")
 
+    async def get_model_metrics(self, model_id: UUID, user_id: UUID) -> str:
+        model = await self._ensure_model_exists(model_id, user_id)
+
+        if model.user_id != user_id:
+            raise PermissionError("Access denied")
+        if model.is_system:
+            raise PermissionError("Cannot get metrics for system model")
+
+        path =  await self.model_repo.get_model_metrics(model_id, user_id)
+        if path:
+            return await self.storage.get_presigned_file_url(path, settings.MINIO_METRICS_BUCKET)
+        else:
+            raise NotFoundError("Metrics not found")
+
     async def download_model(self, model_id: UUID, user_id: UUID) -> str:
         model = await self._ensure_model_exists(model_id, user_id)
         if model.user_id != user_id:
