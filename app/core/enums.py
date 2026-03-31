@@ -30,10 +30,10 @@ class ModelArchitectures(str, Enum):
 
 
 class CacheTTL(IntEnum):
-    DATASETS = 60 * 60
-    MODELS = 120 * 60
-    TASKS = 30 * 60
-    USER = 30 * 60
+    DATASETS = 5 * 60
+    MODELS = 5 * 60
+    TASKS = 5 * 60
+    USER = 5 * 60
 
 
 class CacheKeysObject(str, Enum):

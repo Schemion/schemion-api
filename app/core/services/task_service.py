@@ -64,6 +64,9 @@ class TaskService:
             "task_type":  TaskType.training,
             "model_id":   str(task.model_id),
             "dataset_id": str(task.dataset_id),
+            "image_size": task.image_size,
+            "epochs": task.epochs,
+            "name": task.name,
             "timestamp":  datetime.now(timezone.utc).isoformat()
         }
 
@@ -91,19 +94,12 @@ class TaskService:
 
     async def get_tasks(self, user_id: UUID, skip: int = 0, limit: int = 100) -> \
             list[TaskRead]:
-        cache_key = CacheKeysList.tasks(user_id=user_id)
-        cached = await self.cache_repo.get(cache_key)
-        if cached:
-            return [TaskRead(**item) for item in cached]
         tasks = await self.task_repo.get_tasks(skip, limit, user_id=user_id)
 
         task_reads: list[TaskRead] = []
         for task in tasks:
             task_reads.append(await self._attach_output_url(task))
 
-        serialized = [task_read.model_dump() for task_read in task_reads]
-
-        await self.cache_repo.set(cache_key, serialized, expire=CacheTTL.TASKS.value)
         return task_reads
 
     async def delete_task_by_id(self, task_id: UUID, user_id: UUID) -> None:

@@ -11,6 +11,9 @@ class TaskBase(BaseModel):
     status: TaskStatus = TaskStatus.queued
     model_id: Optional[uuid.UUID] = None
     dataset_id: Optional[uuid.UUID] = None
+    image_size: Optional[int] = None
+    epochs: Optional[int] = None
+    name: Optional[str] = None
     input_path: Optional[str] = None
     output_path: Optional[str] = None
     error_msg: Optional[str] = None
@@ -26,3 +29,4 @@ class TaskRead(TaskBase):
     output_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+

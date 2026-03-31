@@ -43,13 +43,21 @@ async def create_inference_task(request: Request, service: Annotated[TaskService
 
 @router.post("/create/training", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
 @limiter.limit("2/hour")
-async def create_training_task(request: Request, service: Annotated[TaskService, FromDishka()], model_id: UUID = Form(...), dataset_id: UUID = Form(...),
-                                current_user: dict = Depends(get_current_user)):
+async def create_training_task(
+    request: Request,
+    service: Annotated[TaskService, FromDishka()], model_id: UUID = Form(...), 
+    dataset_id: UUID = Form(...), image_size: int = Form(...), 
+    num_epochs: int = Form(...), name: str = Form(...),
+    current_user: dict = Depends(get_current_user),
+):
     task_create = TaskCreate(
         user_id=UUID(current_user.get("id")),
         task_type=TaskType.training,
         model_id=model_id,
         dataset_id=dataset_id,
+        image_size=image_size,
+        epochs=num_epochs,
+        name=name,
     )
     try:
         created = await asyncio.wait_for(service.create_training_task(task_create), timeout=10)
