@@ -40,7 +40,7 @@ class ModelService:
         ModelRead]:
         cache_key = CacheKeysObject.model(model_id=model_id)
         cached = await self.cache_repo.get(cache_key)
-        if cached:
+        if cached is not None:
             return ModelRead(**cached)
 
         model = await self._ensure_model_exists(model_id, user_id)
@@ -55,8 +55,16 @@ class ModelService:
     async def get_models(self, user_id: UUID, skip: int = 0, limit: int = 100,
                         dataset_id: Optional[UUID] = None,
                          include_system: bool = True) -> list[ModelRead]:
+        cache_key = CacheKeysList.models(user_id=user_id, skip=skip, limit=limit,
+                                         dataset_id=dataset_id, include_system=include_system)
+        cached = await self.cache_repo.get(cache_key)
+        if cached is not None:
+            return [ModelRead(**item) for item in cached]
+
         models = await self.model_repo.get_models(user_id=user_id, skip=skip, limit=limit,
                                                   dataset_id=dataset_id, include_system=include_system)
+        serialized = [ModelRead.model_validate(model).model_dump() for model in models]
+        await self.cache_repo.set(cache_key, serialized, expire=CacheTTL.LISTS.value)
         return models
 
     async def delete_model_by_id(self, model_id: UUID, user_id: UUID) -> None:

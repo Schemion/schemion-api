@@ -36,7 +36,7 @@ class DatasetService:
         cache_key = CacheKeysObject.dataset(dataset_id=dataset_id)
 
         cached = await self.cache_repo.get(cache_key)
-        if cached:
+        if cached is not None:
             return DatasetRead(**cached)
 
         dataset = await self._ensure_dataset_exists(dataset_id, user_id)
@@ -53,7 +53,7 @@ class DatasetService:
             list[DatasetRead]:
         cache_key = CacheKeysList.datasets(user_id=user_id, skip=skip, limit=limit, name_contains=name_contains)
         cached = await self.cache_repo.get(cache_key)
-        if cached:
+        if cached is not None:
             return [DatasetRead(**item) for item in cached]
 
         datasets = await self.dataset_repo.get_datasets(user_id=user_id, skip=skip, limit=limit,
@@ -61,7 +61,7 @@ class DatasetService:
 
         serialized = [DatasetRead.model_validate(dataset).model_dump() for dataset in datasets]
 
-        await self.cache_repo.set(cache_key, serialized, expire=CacheTTL.DATASETS.value)
+        await self.cache_repo.set(cache_key, serialized, expire=CacheTTL.LISTS.value)
 
         return datasets
 

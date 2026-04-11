@@ -51,7 +51,7 @@ class TaskService:
 
         await self._publish_inference(QueueTypes.inference_queue, message)
         await self.cache_repo.delete(CacheKeysObject.task(task_id=created.id))
-        await self.cache_repo.delete(CacheKeysList.tasks(user_id=user_id))
+        await self.cache_repo.delete_pattern(f"{CacheKeysList.TASKS}:{user_id}:*")
         return created
 
     async def create_training_task(self, task: TaskCreate) -> TaskRead:
@@ -73,12 +73,13 @@ class TaskService:
         await self._publish_training(QueueTypes.training_queue, message)
         cache_key = CacheKeysObject.task(task_id=created.id)
         await self.cache_repo.delete(cache_key)
+        await self.cache_repo.delete_pattern(f"{CacheKeysList.TASKS}:{task.user_id}:*")
         return created
 
     async def get_task_by_id(self, task_id: UUID, user_id: UUID) -> TaskRead:
         cache_key = CacheKeysObject.task(task_id=task_id)
         cached = await self.cache_repo.get(cache_key)
-        if cached:
+        if cached is not None:
             return TaskRead(**cached)
 
         task = await self.task_repo.get_task_by_id(task_id)
@@ -94,12 +95,19 @@ class TaskService:
 
     async def get_tasks(self, user_id: UUID, skip: int = 0, limit: int = 100) -> \
             list[TaskRead]:
+        cache_key = CacheKeysList.tasks(user_id=user_id, skip=skip, limit=limit)
+        cached = await self.cache_repo.get(cache_key)
+        if cached is not None:
+            return [TaskRead(**item) for item in cached]
+
         tasks = await self.task_repo.get_tasks(skip, limit, user_id=user_id)
 
         task_reads: list[TaskRead] = []
         for task in tasks:
             task_reads.append(await self._attach_output_url(task))
 
+        serialized = [task_read.model_dump() for task_read in task_reads]
+        await self.cache_repo.set(cache_key, serialized, expire=CacheTTL.LISTS.value)
         return task_reads
 
     async def delete_task_by_id(self, task_id: UUID, user_id: UUID) -> None:
@@ -113,6 +121,7 @@ class TaskService:
         await self.task_repo.delete_task_by_id(task_id)
         cache_key = CacheKeysObject.task(task_id=task_id)
         await self.cache_repo.delete_pattern(cache_key)
+        await self.cache_repo.delete_pattern(f"{CacheKeysList.TASKS}:{user_id}:*")
 
     async def _ensure_model_exists(self, model_id: UUID):
         if not await self.model_repo.get_model_by_id(model_id):

@@ -30,6 +30,7 @@ class ModelArchitectures(str, Enum):
 
 
 class CacheTTL(IntEnum):
+    LISTS = 60
     DATASETS = 5 * 60
     MODELS = 5 * 60
     TASKS = 5 * 60
@@ -71,11 +72,10 @@ class CacheKeysList(str, Enum):
         return f"{CacheKeysList.DATASETS}:{user_id}:{skip}:{limit}:{name_contains_val}"
 
     @staticmethod
-    def models(user_id: UUID, skip: int = 0, limit: int = 100,
-               dataset_id: Optional[UUID] = None) -> str:
+    def models(user_id: UUID, skip: int = 0, limit: int = 100, dataset_id: Optional[UUID] = None) -> str:
         d_val = str(dataset_id) if dataset_id else "all"
         return f"{CacheKeysList.MODELS}:{user_id}:{skip}:{limit}:{d_val}"
 
     @staticmethod
-    def tasks(user_id: UUID):
-        return f"{CacheKeysList.TASKS}:{user_id}"
+    def tasks(user_id: UUID, skip: int = 0, limit: int = 100) -> str:
+        return f"{CacheKeysList.TASKS}:{user_id}:{skip}:{limit}"
