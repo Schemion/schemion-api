@@ -56,7 +56,7 @@ class ModelService:
                         dataset_id: Optional[UUID] = None,
                          include_system: bool = True) -> list[ModelRead]:
         cache_key = CacheKeysList.models(user_id=user_id, skip=skip, limit=limit,
-                                         dataset_id=dataset_id, include_system=include_system)
+                                         dataset_id=dataset_id)
         cached = await self.cache_repo.get(cache_key)
         if cached is not None:
             return [ModelRead(**item) for item in cached]

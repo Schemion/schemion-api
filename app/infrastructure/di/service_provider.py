@@ -21,7 +21,7 @@ class ServiceProvider(Provider):
 
     @provide(scope=Scope.APP)
     def cache_service(self) -> CacheService:
-        return CacheService(url=settings.REDIS_URL)
+        return CacheService()
 
     @provide(scope=Scope.REQUEST)
     def get_user_service(self, user_repository: IUserRepository, cache_repository: CacheService) -> UserService:

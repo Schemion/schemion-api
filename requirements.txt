@@ -18,7 +18,6 @@ bidict==0.23.1
 billiard==4.2.2
 blinker==1.9.0
 brotli==1.2.0
-celery==5.5.3
 certifi==2025.10.5
 cffi==2.0.0
 charset-normalizer==3.4.4
@@ -35,7 +34,7 @@ dnspython==2.8.0
 ecdsa==0.19.1
 email-validator==2.3.0
 exceptiongroup==1.3.0
-fastapi==0.118.0
+fastapi==0.135.1
 Flask==3.1.2
 flask-cors==6.0.1
 Flask-Login==0.6.3
@@ -50,7 +49,7 @@ idna==3.10
 iniconfig==2.3.0
 itsdangerous==2.2.0
 Jinja2==3.1.6
-kombu==5.5.4
+kombu==	5.6.2
 limits==5.8.0
 locust==2.42.6
 locust-cloud==1.29.4
@@ -87,7 +86,6 @@ python-multipart==0.0.20
 python-socketio==5.15.0
 PyYAML==6.0.3
 pyzmq==27.1.0
-redis==7.1.0
 requests==2.32.4
 rsa==4.9.1
 simple-websocket==1.1.0
@@ -113,3 +111,6 @@ WTForms==3.1.2
 yarl==1.22.0
 zope.event==6.1
 zope.interface==8.1.1
+bobber @ git+https://github.com/Schemion/bobber-lib.git@a8a30cb0fb75792f89cf03fc55a2acec18f79f87
+grpcio==1.78.0
+protobuf==6.33.6
