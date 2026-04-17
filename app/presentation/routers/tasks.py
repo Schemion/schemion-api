@@ -3,14 +3,20 @@ from uuid import UUID
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile,status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.sse import EventSourceResponse
 import asyncio
 
 from app.common.security.dependencies import get_current_user
 from app.core.enums import TaskType
 from app.core.services import TaskService
-from app.presentation.schemas import TaskCreate, TaskRead
+from app.presentation.schemas import (
+    InferenceTaskCreateRequest,
+    TaskCreate,
+    TaskListRequest,
+    TaskRead,
+    TrainingTaskCreateRequest,
+)
 from app.infrastructure.rate_limiter import limiter
 
 router = APIRouter(prefix="/tasks", tags=["tasks"], route_class=DishkaRoute)
@@ -19,12 +25,13 @@ router = APIRouter(prefix="/tasks", tags=["tasks"], route_class=DishkaRoute)
 @router.post("/create/inference", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/minute")
 async def create_inference_task(request: Request, service: Annotated[TaskService, FromDishka()],
-                                current_user: dict = Depends(get_current_user), model_id: UUID = Form(...),
+                                payload: Annotated[InferenceTaskCreateRequest, Depends(InferenceTaskCreateRequest.as_form)],
+                                current_user: dict = Depends(get_current_user),
                                 file: UploadFile = File(...)):
     task_create = TaskCreate(
         user_id=UUID(current_user.get("id")),
         task_type=TaskType.inference,
-        model_id=model_id,
+        model_id=payload.model_id,
     )
     try:
         file_data = await asyncio.wait_for(file.read(), timeout=10)
@@ -45,19 +52,18 @@ async def create_inference_task(request: Request, service: Annotated[TaskService
 @limiter.limit("2/hour")
 async def create_training_task(
     request: Request,
-    service: Annotated[TaskService, FromDishka()], model_id: UUID = Form(...), 
-    dataset_id: UUID = Form(...), image_size: int = Form(...), 
-    num_epochs: int = Form(...), name: str = Form(...),
+    service: Annotated[TaskService, FromDishka()],
+    payload: Annotated[TrainingTaskCreateRequest, Depends(TrainingTaskCreateRequest.as_form)],
     current_user: dict = Depends(get_current_user),
 ):
     task_create = TaskCreate(
         user_id=UUID(current_user.get("id")),
         task_type=TaskType.training,
-        model_id=model_id,
-        dataset_id=dataset_id,
-        image_size=image_size,
-        epochs=num_epochs,
-        name=name,
+        model_id=payload.model_id,
+        dataset_id=payload.dataset_id,
+        image_size=payload.image_size,
+        epochs=payload.num_epochs,
+        name=payload.name,
     )
     try:
         created = await asyncio.wait_for(service.create_training_task(task_create), timeout=10)
@@ -66,9 +72,10 @@ async def create_training_task(
     return TaskRead.model_validate(created)
 
 @router.get("/", response_model=list[TaskRead])
-async def get_tasks(service: Annotated[TaskService, FromDishka()], skip: int = 0, limit: int = 100,
+async def get_tasks(service: Annotated[TaskService, FromDishka()],
+                    params: Annotated[TaskListRequest, Depends()],
                     current_user: dict = Depends(get_current_user)):
-    tasks = await service.get_tasks(skip=skip, limit=limit, user_id=UUID(current_user.get("id")))
+    tasks = await service.get_tasks(skip=params.skip, limit=params.limit, user_id=UUID(current_user.get("id")))
 
     return [TaskRead.model_validate(task) for task in tasks]
 

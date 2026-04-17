@@ -1,6 +1,7 @@
 import uuid
 from typing import Optional
 
+from fastapi import Form
 from pydantic import BaseModel, ConfigDict
 
 from app.core.enums import TaskStatus
@@ -30,3 +31,40 @@ class TaskRead(TaskBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class InferenceTaskCreateRequest(BaseModel):
+    model_id: uuid.UUID
+
+    @classmethod
+    def as_form(cls, model_id: uuid.UUID = Form(...)) -> "InferenceTaskCreateRequest":
+        return cls(model_id=model_id)
+
+
+class TrainingTaskCreateRequest(BaseModel):
+    model_id: uuid.UUID
+    dataset_id: uuid.UUID
+    image_size: int
+    num_epochs: int
+    name: str
+
+    @classmethod
+    def as_form(
+        cls,
+        model_id: uuid.UUID = Form(...),
+        dataset_id: uuid.UUID = Form(...),
+        image_size: int = Form(...),
+        num_epochs: int = Form(...),
+        name: str = Form(...),
+    ) -> "TrainingTaskCreateRequest":
+        return cls(
+            model_id=model_id,
+            dataset_id=dataset_id,
+            image_size=image_size,
+            num_epochs=num_epochs,
+            name=name,
+        )
+
+
+class TaskListRequest(BaseModel):
+    skip: int = 0
+    limit: int = 100

@@ -1,6 +1,7 @@
 import uuid
 from typing import Optional
 
+from fastapi import Form
 from pydantic import BaseModel, ConfigDict
 
 
@@ -19,3 +20,22 @@ class DatasetRead(DatasetBase):
     user_id: Optional[uuid.UUID]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DatasetCreateRequest(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+    @classmethod
+    def as_form(
+        cls,
+        name: str = Form(...),
+        description: Optional[str] = Form(None),
+    ) -> "DatasetCreateRequest":
+        return cls(name=name, description=description)
+
+
+class DatasetListRequest(BaseModel):
+    skip: int = 0
+    limit: int = 100
+    name_contains: Optional[str] = None

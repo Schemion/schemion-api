@@ -1,16 +1,15 @@
-from typing import Annotated, Optional
+from typing import Annotated
 from uuid import UUID
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from starlette import status
 import asyncio
 
 from app.common.security.dependencies import get_current_user
-from app.core.enums import ModelArchitectures
 from app.core.services import ModelService
-from app.presentation.schemas import ModelCreate, ModelRead
+from app.presentation.schemas import ModelCreate, ModelCreateRequest, ModelListRequest, ModelRead
 from app.infrastructure.rate_limiter import limiter
 
 router = APIRouter(prefix="/models", tags=["models"], route_class=DishkaRoute)
@@ -20,15 +19,15 @@ router = APIRouter(prefix="/models", tags=["models"], route_class=DishkaRoute)
 # TODO: закрыть для дефолтных юзеров, оставить только для админов
 @router.post("/create", response_model=ModelRead, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
-async def create_model(request: Request, service: Annotated[ModelService, FromDishka()], name: str = Form(...),
-                       architecture: ModelArchitectures = Form(...), architecture_profile: str = Form(...),
-                       dataset_id: Optional[UUID] = Form(None), file: UploadFile = File(...),
+async def create_model(request: Request, service: Annotated[ModelService, FromDishka()],
+                       payload: Annotated[ModelCreateRequest, Depends(ModelCreateRequest.as_form)],
+                       file: UploadFile = File(...),
                        current_user: dict = Depends(get_current_user)):
     model_create = ModelCreate(
-        name=name,
-        architecture=architecture.value,
-        architecture_profile=architecture_profile,
-        dataset_id=dataset_id,
+        name=payload.name,
+        architecture=payload.architecture.value,
+        architecture_profile=payload.architecture_profile,
+        dataset_id=payload.dataset_id,
     )
     try:
         file_data = await asyncio.wait_for(file.read(), timeout=10)
@@ -47,14 +46,15 @@ async def create_model(request: Request, service: Annotated[ModelService, FromDi
 
 
 @router.get("/", response_model=list[ModelRead])
-async def get_models(service: Annotated[ModelService, FromDishka()], skip: int = 0, limit: int = 100, dataset_id: Optional[UUID] = None,
-                     include_system: bool = True, current_user: dict = Depends(get_current_user)):
+async def get_models(service: Annotated[ModelService, FromDishka()],
+                     params: Annotated[ModelListRequest, Depends()],
+                     current_user: dict = Depends(get_current_user)):
     models = await service.get_models(
         user_id=UUID(current_user.get("id")),
-        skip=skip,
-        limit=limit,
-        dataset_id=dataset_id,
-        include_system=include_system,
+        skip=params.skip,
+        limit=params.limit,
+        dataset_id=params.dataset_id,
+        include_system=params.include_system,
     )
 
     return [ModelRead.model_validate(model) for model in models]

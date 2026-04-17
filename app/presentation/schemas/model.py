@@ -1,8 +1,10 @@
 import uuid
 from typing import Optional
 
+from fastapi import Form
 from pydantic import BaseModel, ConfigDict
 
+from app.core.enums import ModelArchitectures
 
 
 class ModelBase(BaseModel):
@@ -25,3 +27,32 @@ class ModelRead(ModelBase):
     base_model_id: Optional[uuid.UUID]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ModelCreateRequest(BaseModel):
+    name: str
+    architecture: ModelArchitectures
+    architecture_profile: str
+    dataset_id: Optional[uuid.UUID] = None
+
+    @classmethod
+    def as_form(
+        cls,
+        name: str = Form(...),
+        architecture: ModelArchitectures = Form(...),
+        architecture_profile: str = Form(...),
+        dataset_id: Optional[uuid.UUID] = Form(None),
+    ) -> "ModelCreateRequest":
+        return cls(
+            name=name,
+            architecture=architecture,
+            architecture_profile=architecture_profile,
+            dataset_id=dataset_id,
+        )
+
+
+class ModelListRequest(BaseModel):
+    skip: int = 0
+    limit: int = 100
+    dataset_id: Optional[uuid.UUID] = None
+    include_system: bool = True
