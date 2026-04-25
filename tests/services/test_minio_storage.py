@@ -3,7 +3,8 @@ from tests.utils import run
 
 
 class _FakeMinio:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, endpoint, *args, **kwargs):
+        self.endpoint = endpoint
         self.buckets = set()
         self.put_calls = []
         self.remove_calls = []
@@ -20,7 +21,7 @@ class _FakeMinio:
         self.buckets.add(bucket)
 
     async def put_object(self, bucket_name, object_name, data, length, content_type):
-        self.put_calls.append((bucket_name, object_name, length, content_type))
+        self.put_calls.append((bucket_name, object_name, length, content_type, data))
 
     async def remove_object(self, bucket_name, object_name):
         self.remove_calls.append((bucket_name, object_name))
@@ -50,4 +51,6 @@ def test_delete_and_presign(monkeypatch):
     url = run(storage.get_presigned_file_url("obj", "bucket", expires=10))
 
     assert storage.client.remove_calls == [("bucket", "obj")]
+    assert storage.client.presigned_calls == []
+    assert storage.signer_client.presigned_calls
     assert url == "url"
