@@ -6,7 +6,7 @@ import pytest
 
 from app.core.exceptions import UnauthorizedError, ValidationError
 from app.core.services.auth_service import AuthService
-from app.presentation.schemas import LoginRequest, UserCreate
+from app.presentation.schemas import LoginRequest, RefreshTokenRequest, UserCreate
 from app.core.enums import UserRoles
 from tests.utils import run
 
@@ -36,6 +36,8 @@ def test_register_hashes_password_and_creates_user(monkeypatch):
         return "hashed-pw"
 
     monkeypatch.setattr("app.core.services.auth_service.get_password_hash_async", _hash)
+    monkeypatch.setattr("app.core.services.auth_service.create_access_token", lambda *_: "access-token")
+    monkeypatch.setattr("app.core.services.auth_service.create_refresh_token", lambda *_: "refresh-token")
 
     created_user = SimpleNamespace(id=uuid4(), email="user@example.com", role=UserRoles.user)
     user_repo = SimpleNamespace(
@@ -48,7 +50,8 @@ def test_register_hashes_password_and_creates_user(monkeypatch):
 
     created_arg = user_repo.create_user.call_args.args[0]
     assert created_arg.password == "hashed-pw"
-    assert result.email == "user@example.com"
+    assert result.access_token == "access-token"
+    assert result.refresh_token == "refresh-token"
 
 
 def test_login_invalid_email_raises():
@@ -93,8 +96,41 @@ def test_login_success_returns_token(monkeypatch):
 
     monkeypatch.setattr("app.core.services.auth_service.verify_password_async", _verify)
     monkeypatch.setattr("app.core.services.auth_service.create_access_token", lambda *_: "token")
+    monkeypatch.setattr("app.core.services.auth_service.create_refresh_token", lambda *_: "refresh")
 
     service = AuthService(user_repo)
     token = run(service.login(LoginRequest(email="user@example.com", password="pw")))
 
     assert token.access_token == "token"
+    assert token.refresh_token == "refresh"
+
+
+def test_refresh_success_returns_new_access_token(monkeypatch):
+    user_id = uuid4()
+    user_repo = SimpleNamespace()
+
+    monkeypatch.setattr(
+        "app.core.services.auth_service.decode_token",
+        lambda *_: {"type": "refresh", "sub": str(user_id), "roles": ["user"], "permissions": ["read"]},
+    )
+    monkeypatch.setattr("app.core.services.auth_service.create_access_token", lambda *_: "new-access")
+
+    service = AuthService(user_repo)
+    token = run(service.refresh(RefreshTokenRequest(refresh_token="refresh")))
+
+    assert token.access_token == "new-access"
+    assert token.refresh_token is None
+
+
+def test_refresh_rejects_access_token(monkeypatch):
+    user_repo = SimpleNamespace()
+
+    monkeypatch.setattr(
+        "app.core.services.auth_service.decode_token",
+        lambda *_: {"type": "access", "sub": str(uuid4())},
+    )
+
+    service = AuthService(user_repo)
+
+    with pytest.raises(UnauthorizedError):
+        run(service.refresh(RefreshTokenRequest(refresh_token="access")))

@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "supersecret"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
     MINIO_ENDPOINT: str = "minio:9000"
     MINIO_PUBLIC_ENDPOINT: str = "files.localhost"
     MINIO_ACCESS_KEY: str = "minioadmin"
