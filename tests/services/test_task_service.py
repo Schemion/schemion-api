@@ -122,6 +122,7 @@ def test_create_training_task_publishes_and_clears_cache():
     assert message["task_type"] == TaskType.training
     assert message["model_id"] == str(model_id)
     assert message["dataset_id"] == str(dataset_id)
+    assert message["user_id"] == str(user_id)
     assert message["image_size"] == 640
     assert message["epochs"] == 10
     assert message["name"] == "train-v1"

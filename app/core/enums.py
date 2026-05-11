@@ -21,7 +21,9 @@ class TaskType(str, Enum):
 
 class QueueTypes(str, Enum):
     inference_queue = "inference_queue"
+    inference_queue_result = "inference_queue_result"
     training_queue = "training_queue"
+    training_queue_result = "training_queue_result"
 
 
 class ModelArchitectures(str, Enum):

@@ -4,7 +4,7 @@ from app.core.interfaces import IDatasetRepository, IModelRepository, ITaskRepos
 from app.core.services import DatasetService, ModelService, TaskService, UserService
 from app.core.services.auth_service import AuthService
 from app.infrastructure.config import settings
-from app.infrastructure.services.cache import CacheService
+from app.infrastructure.services.cache import CacheService, cache_service
 from app.infrastructure.services.cloud_storage import MinioStorage
 from app.infrastructure.services.broker import BobberPublisher
 
@@ -21,7 +21,7 @@ class ServiceProvider(Provider):
 
     @provide(scope=Scope.APP)
     def cache_service(self) -> CacheService:
-        return CacheService()
+        return cache_service
 
     @provide(scope=Scope.REQUEST)
     def get_user_service(self, user_repository: IUserRepository, cache_repository: CacheService) -> UserService:

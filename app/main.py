@@ -1,8 +1,12 @@
+import asyncio
+
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from app.core.exceptions import NotFoundError, UnauthorizedError, ValidationError
 from app.infrastructure.di.container import container
+from app.infrastructure.config import settings
+from app.infrastructure.services.broker import BobberTaskStatusConsumer
 from app.middleware.admin_guard import AdminGuardMiddleware
 from app.presentation.routers import admin, auth, datasets, models, tasks
 
@@ -12,6 +16,24 @@ from app.infrastructure.rate_limiter import init_rate_limiter
 
 app = FastAPI(redirect_slashes=True)
 init_rate_limiter(app)
+
+
+@app.on_event("startup")
+async def start_task_status_consumer():
+    consumer = BobberTaskStatusConsumer(
+        host=settings.BOBBER_HOST or "localhost",
+        port=settings.BOBBER_PORT or 50051,
+        loop=asyncio.get_running_loop(),
+    )
+    consumer.start()
+    app.state.task_status_consumer = consumer
+
+
+@app.on_event("shutdown")
+async def stop_task_status_consumer():
+    consumer = getattr(app.state, "task_status_consumer", None)
+    if consumer:
+        consumer.close()
 
 app.add_middleware(
     CORSMiddleware,
