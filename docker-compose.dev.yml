@@ -6,12 +6,13 @@ services:
       - .env
     depends_on:
       - database
+      - bob-the-broker
     ports:
       - "8000:8000"
     volumes:
       - .:/app
     command:
-      [ "/wait-for-it.sh", "database:5432", "--", "sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4" ]
+      [ "/wait-for-it.sh", "database:5432", "--", "/wait-for-it.sh", "bob-the-broker:50051", "--", "sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4" ]
 
 
   database:
@@ -23,6 +24,14 @@ services:
       POSTGRES_DB: schemion
     ports:
       - "5432:5432"
+
+  bob-the-broker:
+    image: ghcr.io/schemion/bob-the-broker:v2.2
+    container_name: bob-the-broker
+    ports:
+      - "50051:50051"
+    restart: unless-stopped
+
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     restart: always

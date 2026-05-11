@@ -20,6 +20,9 @@ if "bobber" not in sys.modules:
         def produce(self, *_args, **_kwargs) -> bool:
             return True
 
+        def subscribe(self, *_args, **_kwargs):
+            return None
+
         def close(self) -> None:
             return None
 

@@ -95,3 +95,6 @@ class CacheService(ICacheRepository):
             return 0
         jitter = base_ttl * random.uniform(0, self._jitter_ratio)
         return int(base_ttl + jitter)
+
+
+cache_service = CacheService()

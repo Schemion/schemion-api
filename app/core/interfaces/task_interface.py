@@ -29,5 +29,15 @@ class ITaskRepository(ABC):
         ...
 
     @abstractmethod
+    async def update_task_status(
+        self,
+        task_id: UUID,
+        status: str,
+        output_path: Optional[str] = None,
+        error_msg: Optional[str] = None,
+    ) -> Optional[Task]:
+        ...
+
+    @abstractmethod
     async def delete_task_by_id(self, task_id: UUID):
         ...

@@ -64,6 +64,7 @@ class TaskService:
             "task_type":  TaskType.training,
             "model_id":   str(task.model_id),
             "dataset_id": str(task.dataset_id),
+            "user_id":    str(task.user_id),
             "image_size": task.image_size,
             "epochs": task.epochs,
             "name": task.name,

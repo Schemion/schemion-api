@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import select
@@ -76,6 +77,30 @@ class TaskRepository(ITaskRepository):
         result = await self.session.execute(query)
         db_tasks = result.scalars().all()
         return [task for task in db_tasks]
+
+    async def update_task_status(
+            self,
+            task_id: UUID,
+            status: str,
+            output_path: Optional[str] = None,
+            error_msg: Optional[str] = None,
+    ) -> Optional[Task]:
+        db_task = await self.get_task_by_id(task_id)
+        if not db_task:
+            return None
+
+        db_task.status = status
+        db_task.updated_at = datetime.now(timezone.utc)
+        if output_path is not None:
+            db_task.output_path = output_path
+        if error_msg is not None:
+            db_task.error_msg = error_msg
+        elif status != "failed":
+            db_task.error_msg = None
+
+        await self.session.commit()
+        await self.session.refresh(db_task)
+        return db_task
 
     async def delete_task_by_id(self, task_id: UUID) -> None:
         query = select(Task).where(task_id == Task.id)

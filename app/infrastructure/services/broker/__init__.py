@@ -1,1 +1,2 @@
 from .bobber_publisher import BobberPublisher
+from .task_status_consumer import BobberTaskStatusConsumer
