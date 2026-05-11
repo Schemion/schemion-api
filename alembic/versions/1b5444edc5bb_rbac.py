@@ -34,6 +34,15 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
+    roles_table = sa.table(
+        'roles',
+        sa.column('id', sa.UUID()),
+        sa.column('name', sa.String(length=30)),
+    )
+    op.bulk_insert(
+        roles_table,
+        [{'id': '00000000-0000-0000-0000-000000000001', 'name': 'user'}],
+    )
     op.create_table('role_permissions',
     sa.Column('role_id', sa.UUID(), nullable=False),
     sa.Column('permission_id', sa.UUID(), nullable=False),
