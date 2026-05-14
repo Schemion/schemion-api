@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 
 class Token(BaseModel):
@@ -14,3 +14,12 @@ class LoginRequest(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+
+class RegistrationCodeSent(BaseModel):
+    detail: str
+
+
+class RegistrationConfirmRequest(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=4, max_length=8, pattern=r"^\d+$")

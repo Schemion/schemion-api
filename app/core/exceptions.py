@@ -8,3 +8,11 @@ class UnauthorizedError(Exception):
 
 class ValidationError(Exception):
     pass
+
+
+class ServiceUnavailableError(Exception):
+    pass
+
+
+class MailDeliveryError(Exception):
+    pass

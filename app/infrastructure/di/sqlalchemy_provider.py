@@ -3,10 +3,16 @@ from typing import AsyncIterator
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.interfaces import IDatasetRepository, IModelRepository, ITaskRepository, IUserRepository
+from app.core.interfaces import (
+    IDatasetRepository,
+    IModelRepository,
+    IRegistrationConfirmationRepository,
+    ITaskRepository,
+    IUserRepository,
+)
 from app.infrastructure.database import AsyncSessionLocal
 from app.infrastructure.persistence.repositories import DatasetRepository, ModelRepository, TaskRepository, \
-    UserRepository
+    RegistrationConfirmationRepository, UserRepository
 
 
 class SQLAlchemyProvider(Provider):
@@ -18,6 +24,10 @@ class SQLAlchemyProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def get_user_repository(self, session: AsyncSession) -> IUserRepository:
         return UserRepository(session)
+
+    @provide(scope=Scope.REQUEST)
+    def get_registration_confirmation_repository(self, session: AsyncSession) -> IRegistrationConfirmationRepository:
+        return RegistrationConfirmationRepository(session)
 
     @provide(scope=Scope.REQUEST)
     def get_task_repository(self, session: AsyncSession) -> ITaskRepository:

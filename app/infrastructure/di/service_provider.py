@@ -1,12 +1,20 @@
 from dishka import Provider, Scope, provide
 
-from app.core.interfaces import IDatasetRepository, IModelRepository, ITaskRepository, IUserRepository
+from app.core.interfaces import (
+    IDatasetRepository,
+    IMailService,
+    IModelRepository,
+    IRegistrationConfirmationRepository,
+    ITaskRepository,
+    IUserRepository,
+)
 from app.core.services import DatasetService, ModelService, TaskService, UserService
 from app.core.services.auth_service import AuthService
 from app.infrastructure.config import settings
 from app.infrastructure.services.cache import CacheService, cache_service
 from app.infrastructure.services.cloud_storage import MinioStorage
 from app.infrastructure.services.broker import BobberPublisher
+from app.infrastructure.services.mail import SMTPMailService
 
 
 class ServiceProvider(Provider):
@@ -28,8 +36,13 @@ class ServiceProvider(Provider):
         return UserService(user_repository, cache_repository)
 
     @provide(scope=Scope.REQUEST)
-    def get_auth_service(self, user_repository: IUserRepository) -> AuthService:
-        return AuthService(user_repository)
+    def get_auth_service(
+            self,
+            user_repository: IUserRepository,
+            confirmation_repository: IRegistrationConfirmationRepository,
+            mail_service: IMailService,
+    ) -> AuthService:
+        return AuthService(user_repository, confirmation_repository, mail_service)
 
     @provide(scope=Scope.REQUEST)
     def get_task_service(self, task_repository: ITaskRepository, model_repository: IModelRepository,
@@ -55,4 +68,13 @@ class ServiceProvider(Provider):
         return BobberPublisher(
             host=settings.BOBBER_HOST or "localhost",
             port=settings.BOBBER_PORT or 50051
+        )
+
+    @provide(scope=Scope.APP)
+    def mail_service(self) -> IMailService:
+        return SMTPMailService(
+            host=settings.MAIL_SMTP_HOST,
+            port=settings.MAIL_SMTP_PORT,
+            mail_from=settings.MAIL_FROM,
+            timeout_seconds=settings.MAIL_SMTP_TIMEOUT_SECONDS,
         )

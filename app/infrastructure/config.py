@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     MINIO_INFERENCES_BUCKET: str = "inference-results"
     BOBBER_HOST: str = "bob-the-broker"
     BOBBER_PORT: int = 50051
+    MAIL_SMTP_HOST: str = "schemion-mail"
+    MAIL_SMTP_PORT: int = 1025
+    MAIL_SMTP_TIMEOUT_SECONDS: int = 10
+    MAIL_FROM: str = "no-reply@schemion.local"
+    REGISTRATION_CODE_TTL_SECONDS: int = 10 * 60
+    REGISTRATION_CODE_LENGTH: int = 6
+    REGISTRATION_CODE_MAX_ATTEMPTS: int = 5
 
     model_config = SettingsConfigDict(
         env_file='.env',
