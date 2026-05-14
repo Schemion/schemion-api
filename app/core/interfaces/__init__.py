@@ -4,3 +4,5 @@ from .model_interface import IModelRepository
 from .dataset_interface import IDatasetRepository
 from .storage_interface import IStorageRepository
 from .cache_interface import ICacheRepository
+from .registration_confirmation_interface import IRegistrationConfirmationRepository
+from .mail_interface import IMailService

@@ -7,3 +7,4 @@ from .role import Role
 from .user_role import UserRole
 from .role_permission import RolePermission
 from .permission import Permission
+from .registration_confirmation import RegistrationConfirmation

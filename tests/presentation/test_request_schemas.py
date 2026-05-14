@@ -5,6 +5,7 @@ from app.presentation.schemas import (
     DatasetCreateRequest,
     InferenceTaskCreateRequest,
     ModelCreateRequest,
+    RegistrationConfirmRequest,
     TaskListRequest,
     TrainingTaskCreateRequest,
 )
@@ -64,3 +65,10 @@ def test_task_list_request_defaults_are_stable():
 
     assert request.skip == 0
     assert request.limit == 100
+
+
+def test_registration_confirm_request_accepts_digit_code():
+    request = RegistrationConfirmRequest(email="user@example.com", code="123456")
+
+    assert str(request.email) == "user@example.com"
+    assert request.code == "123456"

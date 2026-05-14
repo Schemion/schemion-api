@@ -1,7 +1,7 @@
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from app.core.exceptions import NotFoundError, UnauthorizedError, ValidationError
+from app.core.exceptions import NotFoundError, ServiceUnavailableError, UnauthorizedError, ValidationError
 from app.infrastructure.di.container import container
 from app.middleware.admin_guard import AdminGuardMiddleware
 from app.presentation.routers import admin, auth, datasets, models, tasks
@@ -32,6 +32,10 @@ async def unauthorized_error_handler(_, exc: UnauthorizedError):
 @app.exception_handler(ValidationError)
 async def validation_error_handler(_, exc: ValidationError):
     return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+@app.exception_handler(ServiceUnavailableError)
+async def service_unavailable_error_handler(_, exc: ServiceUnavailableError):
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 setup_dishka(container=container, app=app)
 
