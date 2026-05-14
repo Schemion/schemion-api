@@ -13,7 +13,7 @@ def anyio_backend():
     return "asyncio"
 
 
-async def test_auth_register_and_login():
+async def test_auth_register_confirm_and_login(api_test_state):
     email = f"api_smoke_{uuid4().hex}@example.com"
     password = "12345678"
 
@@ -22,11 +22,19 @@ async def test_auth_register_and_login():
             "/auth/register",
             json={"email": email, "password": password, "role": "user"},
         )
-        assert register_response.status_code == 201
+        assert register_response.status_code == 202
         register_body = register_response.json()
-        assert register_body.get("access_token")
-        assert register_body.get("refresh_token")
-        assert register_body.get("token_type") == "bearer"
+        assert register_body == {"detail": "Registration confirmation code sent"}
+
+        confirm_response = await client.post(
+            "/auth/register/confirm",
+            json={"email": email, "code": api_test_state.mail_service.registration_codes[email]},
+        )
+        assert confirm_response.status_code == 201
+        confirm_body = confirm_response.json()
+        assert confirm_body.get("access_token")
+        assert confirm_body.get("refresh_token")
+        assert confirm_body.get("token_type") == "bearer"
 
         login_response = await client.post(
             "/auth/login",
@@ -39,7 +47,7 @@ async def test_auth_register_and_login():
         assert login_body.get("token_type") == "bearer"
 
 
-async def test_tasks_list_requires_auth_and_returns_list():
+async def test_tasks_list_requires_auth_and_returns_list(api_test_state):
     email = f"api_tasks_{uuid4().hex}@example.com"
     password = "12345678"
 
@@ -48,8 +56,14 @@ async def test_tasks_list_requires_auth_and_returns_list():
             "/auth/register",
             json={"email": email, "password": password, "role": "user"},
         )
-        assert register_response.status_code == 201
-        access_token = register_response.json()["access_token"]
+        assert register_response.status_code == 202
+
+        confirm_response = await client.post(
+            "/auth/register/confirm",
+            json={"email": email, "code": api_test_state.mail_service.registration_codes[email]},
+        )
+        assert confirm_response.status_code == 201
+        access_token = confirm_response.json()["access_token"]
 
         unauthorized_response = await client.get("/tasks/")
         assert unauthorized_response.status_code == 401
