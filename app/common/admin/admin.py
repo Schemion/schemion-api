@@ -1,29 +1,33 @@
-from urllib import request
+from uuid import UUID
 
-from dishka import AsyncContainer
 from jose import JWTError, jwt
 from sqladmin.authentication import AuthenticationBackend
-from sqlalchemy.sql.annotation import Annotated
 from starlette.requests import Request
 from starlette.responses import Response
 
 from app.common.security import create_access_token
 from app.common.security.hashing import verify_password_async
+from app.core.enums import UserRoles
 from app.core.services import UserService
 from app.infrastructure.config import settings
+
+
+def _extract_role_names(user) -> list[str]:
+    return [role.name for role in getattr(user, "roles", []) if getattr(role, "name", None)]
 
 
 class AdminAuth(AuthenticationBackend):
     def __init__(self, secret_key: str = settings.JWT_SECRET):
         super().__init__(secret_key=secret_key)
 
-    async def login(
-            self,
-            request: Request
-    ) -> bool:
+    async def login(self, request: Request) -> bool:
         form = await request.form()
         # В sqladmin ожидается username, но так как у нас его нет, то будет email но подпись останется username
-        email, password = form["username"], form["password"]
+        email = (form.get("username") or "").strip()
+        password = form.get("password") or ""
+        if not email or not password:
+            return False
+
         container = request.app.state.dishka_container
         async with container() as con:
             user_service = await con.get(UserService)
@@ -34,41 +38,42 @@ class AdminAuth(AuthenticationBackend):
             if not await verify_password_async(password, user.hashed_password):
                 return False
 
-            token = create_access_token({"sub": str(user.id), "role": user.roles})
+            role_names = _extract_role_names(user)
+            if UserRoles.admin.value not in role_names:
+                return False
 
+            token = create_access_token({"sub": str(user.id), "roles": role_names})
             request.session.update({"token": token})
-
             return True
 
     async def logout(self, request: Request) -> Response | bool:
         request.session.clear()
         return True
 
-    async def authenticate(
-            self,
-            request: Request,
-    ) -> Response | bool:
+    async def authenticate(self, request: Request) -> Response | bool:
         token = request.session.get("token")
         if not token:
             return False
 
         try:
             payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-            user_id = payload.get("sub")
-            user_role = payload.get("role")
-            if not user_id or not user_role:
+            user_id_raw = payload.get("sub")
+            if not user_id_raw:
                 return False
-            container = request.app.state.dishka_container
-            async with container() as con:
-                user_service = await con.get(UserService)
-                user = await user_service.get_user_by_id(user_id)
-
-                if not user:
-                    return False
-
-                if user_role != "admin":
-                    return False
-        except JWTError:
+            user_id = UUID(str(user_id_raw))
+        except (JWTError, ValueError):
             return False
+
+        container = request.app.state.dishka_container
+        async with container() as con:
+            user_service = await con.get(UserService)
+            user = await user_service.get_user_by_id(user_id)
+
+            if not user:
+                return False
+
+            role_names = _extract_role_names(user)
+            if UserRoles.admin.value not in role_names:
+                return False
 
         return True

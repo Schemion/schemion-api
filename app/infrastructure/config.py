@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://admin:admin@database:5432/schemion"
     JWT_SECRET: str = "supersecret"
     JWT_ALGORITHM: str = "HS256"
+    ADMIN_BASE_URL: str = "/schemion.admin"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
     MINIO_ENDPOINT: str = "minio:9000"
