@@ -11,6 +11,7 @@ from app.middleware.admin_guard import AdminGuardMiddleware
 from app.presentation.routers import admin, auth, datasets, models, tasks
 
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.infrastructure.rate_limiter import init_rate_limiter
 
@@ -62,6 +63,10 @@ async def service_unavailable_error_handler(_, exc: ServiceUnavailableError):
 setup_dishka(container=container, app=app)
 
 app.add_middleware(AdminGuardMiddleware)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.JWT_SECRET,
+)
 
 app.include_router(auth.router)
 app.include_router(tasks.router)
