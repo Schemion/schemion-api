@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from uuid import UUID
 
 from jose import JWTError, jwt
@@ -16,6 +17,18 @@ def _extract_role_names(user) -> list[str]:
     return [role.name for role in getattr(user, "roles", []) if getattr(role, "name", None)]
 
 
+@asynccontextmanager
+async def _user_service_context(request: Request):
+    request_container = getattr(getattr(request, "state", None), "dishka_container", None)
+    if request_container is not None:
+        yield await request_container.get(UserService)
+        return
+
+    container = request.app.state.dishka_container
+    async with container() as con:
+        yield await con.get(UserService)
+
+
 class AdminAuth(AuthenticationBackend):
     def __init__(self, secret_key: str = settings.JWT_SECRET):
         super().__init__(secret_key=secret_key)
@@ -28,9 +41,7 @@ class AdminAuth(AuthenticationBackend):
         if not email or not password:
             return False
 
-        container = request.app.state.dishka_container
-        async with container() as con:
-            user_service = await con.get(UserService)
+        async with _user_service_context(request) as user_service:
             user = await user_service.get_user_by_email(email)
 
             if not user:
@@ -64,9 +75,7 @@ class AdminAuth(AuthenticationBackend):
         except (JWTError, ValueError):
             return False
 
-        container = request.app.state.dishka_container
-        async with container() as con:
-            user_service = await con.get(UserService)
+        async with _user_service_context(request) as user_service:
             user = await user_service.get_user_by_id(user_id)
 
             if not user:
